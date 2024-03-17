@@ -1,0 +1,47 @@
+{
+  "name": "mynth-logger",
+  "version": "1.1.1",
+  "description": "Package to format logs for mynth microservices.",
+  "main": "dist/src/index.js",
+  "typings": "dist/src/index.d.ts",
+  "scripts": {
+    "build": "npx tsc",
+    "test": "npx tsc && npx ava",
+    "test:pretty": "npx tsc && TEST_PRETTY=true npx ava",
+    "logs": "npx tsc && node dist/src/run.js",
+    "prettier": "npx prettier -w '**/*.{js,jsx,ts,tsx,json,yml.j2,yml,yaml,.*}'",
+    "lint": "concurrently \"npx prettier --check '**/*.{js,jsx,ts,tsx,json,yml.j2,yml,yaml,.*}'\" \"npx eslint . --max-warnings=0\""
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
+  "author": "Mynth",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com-mynth:MynthAI/mynth-logger.git"
+  },
+  "dependencies": {
+    "axios": "^1.5.1",
+    "pino": "^8.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.0",
+    "@typescript-eslint/eslint-plugin": "^6.8.0",
+    "ava": "^5.3.1",
+    "concurrently": "^8.2.0",
+    "eslint": "^8.47.0",
+    "eslint-plugin-ava": "^14.0.0",
+    "eslint-plugin-file-extension-in-import-ts": "^1.0.2",
+    "eslint-plugin-import": "^2.28.1",
+    "pino-pretty": "^10.2.0",
+    "prettier": "^3.0.2",
+    "tsx": "^3.12.7",
+    "typescript": "^5.1.6"
+  },
+  "ava": {
+    "files": [
+      "dist/tests/**/*.test.js"
+    ]
+  }
+}
