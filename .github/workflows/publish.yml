@@ -12,18 +12,20 @@ on:
           - patch
 
 jobs:
-  validate-publish-and-bump:
+  publish:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
           check-latest: true
 
       - name: Update npm
@@ -34,10 +36,10 @@ jobs:
 
       - name: Bump version and commit
         run: |
+          git config --global user.email "dev@mynth.ai"
+          git config --global user.name "Mynth Publisher"
           npm version ${{ github.event.inputs.versionType }} -m "chore(release): bump to %s version"
           git push --follow-tags
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
         run: npm run build
