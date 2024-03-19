@@ -22,8 +22,8 @@
     "url": "git@github.com-mynth:MynthAI/mynth-logger.git"
   },
   "dependencies": {
-    "axios": "^1.5.1",
-    "pino": "^8.15.0"
+    "axios": "^1.6.8",
+    "pino": "^8.19.0"
   },
   "devDependencies": {
     "@types/node": "^20.5.0",
