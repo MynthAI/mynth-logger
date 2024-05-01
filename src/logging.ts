@@ -1,4 +1,5 @@
 import pino, { Logger, LoggerOptions } from "pino";
+import { stringify } from "flatted";
 
 type AwaitableLogger = Logger & {
   untilFinished: Promise<void>;
@@ -44,13 +45,13 @@ const formatItem = (item: unknown): string => {
   // Check if this is a string
   if (typeof item === "string") return item;
 
-  let stringified = "";
-
-  try {
-    stringified = JSON.stringify(item) || String(item);
-  } catch {
-    stringified = String(item);
-  }
+  const stringified = (() => {
+    try {
+      return stringify(item);
+    } catch {
+      return String(item);
+    }
+  })();
 
   return stringified.replace(/^'|'$/g, "");
 };
