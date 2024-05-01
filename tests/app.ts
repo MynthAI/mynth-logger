@@ -26,6 +26,21 @@ const run = async () => {
   } catch (error) {
     console.error("A bigint was thrown:", error);
   }
+
+  try {
+    throw { msg: "This is a non-standard error" };
+  } catch (error) {
+    console.error(error);
+  }
+
+  class MyObject {
+    constructor(
+      public a: string,
+      public b: number
+    ) {}
+  }
+
+  console.log("This is MyObject", new MyObject("a", 3));
 };
 
 run();
