@@ -1,4 +1,5 @@
 import pino, { Logger, LoggerOptions } from "pino";
+import { stringify } from "flatted";
 
 type AwaitableLogger = Logger & {
   untilFinished: Promise<void>;
@@ -21,8 +22,7 @@ type Params = {
   targets?: Target[];
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const formatItem = (item: any): string => {
+const formatItem = (item: unknown): string => {
   if (typeof item === "undefined") {
     return "undefined";
   }
@@ -33,19 +33,30 @@ const formatItem = (item: any): string => {
     return item.replace(/\x1b\[[0-9;]*m/g, "");
   }
 
-  let stringified = "";
+  // Check if this is an Error
+  if (
+    item &&
+    typeof item === "object" &&
+    "message" in item &&
+    typeof item.message === "string"
+  )
+    return item.message;
 
-  try {
-    stringified = JSON.stringify(item) || String(item);
-  } catch {
-    stringified = String(item);
-  }
+  // Check if this is a string
+  if (typeof item === "string") return item;
+
+  const stringified = (() => {
+    try {
+      return stringify(item).slice(1).slice(0, -1);
+    } catch {
+      return String(item);
+    }
+  })();
 
   return stringified.replace(/^'|'$/g, "");
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const format = (items: any[]): string => {
+const format = (items: unknown[]): string => {
   return Array.from(items)
     .map((item) => formatItem(item))
     .join(" ");
