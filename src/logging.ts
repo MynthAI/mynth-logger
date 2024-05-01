@@ -21,8 +21,7 @@ type Params = {
   targets?: Target[];
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const formatItem = (item: any): string => {
+const formatItem = (item: unknown): string => {
   if (typeof item === "undefined") {
     return "undefined";
   }
@@ -32,6 +31,18 @@ const formatItem = (item: any): string => {
     // eslint-disable-next-line no-control-regex
     return item.replace(/\x1b\[[0-9;]*m/g, "");
   }
+
+  // Check if this is an Error
+  if (
+    item &&
+    typeof item === "object" &&
+    "message" in item &&
+    typeof item.message === "string"
+  )
+    return item.message;
+
+  // Check if this is a string
+  if (typeof item === "string") return item;
 
   let stringified = "";
 
@@ -44,8 +55,7 @@ const formatItem = (item: any): string => {
   return stringified.replace(/^'|'$/g, "");
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const format = (items: any[]): string => {
+const format = (items: unknown[]): string => {
   return Array.from(items)
     .map((item) => formatItem(item))
     .join(" ");
