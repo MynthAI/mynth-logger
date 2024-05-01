@@ -44,7 +44,8 @@ const run = async () => {
   console.log(new MyObject("without a prefix", 100));
 
   try {
-    throw MyObject("Error invoking", 1);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    throw (MyObject as any)("Error invoking", 1);
   } catch (error) {
     console.error(error);
   }
