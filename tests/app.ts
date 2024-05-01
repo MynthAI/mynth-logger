@@ -1,9 +1,5 @@
 import { setupLogging } from "../src/index";
 
-const errorFunc = () => {
-  throw new Error("An error was thrown");
-};
-
 const run = async () => {
   setupLogging();
 
@@ -14,9 +10,21 @@ const run = async () => {
   console.error("Hello, this is an error log");
 
   try {
-    errorFunc();
+    throw new Error("An Error was thrown");
   } catch (error) {
     console.error(error);
+  }
+
+  try {
+    throw "A string was thrown";
+  } catch (error) {
+    console.error(error);
+  }
+
+  try {
+    throw 10n;
+  } catch (error) {
+    console.error("A bigint was thrown:", error);
   }
 };
 
