@@ -41,6 +41,21 @@ const run = async () => {
   }
 
   console.log("This is MyObject", new MyObject("a", 3));
+  console.log(new MyObject("without a prefix", 100));
+
+  try {
+    throw MyObject("Error invoking", 1);
+  } catch (error) {
+    console.error(error);
+  }
+
+  try {
+    throw new MyObject("This is a custom error", 1);
+  } catch (error) {
+    console.error(error);
+  }
+
+  console.log("This is concatenating an object", {});
 };
 
 run();
