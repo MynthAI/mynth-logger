@@ -27,8 +27,6 @@ jobs:
         with:
           node-version: 18
           check-latest: true
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Update npm
         run: npm install -g npm@latest
@@ -47,6 +45,8 @@ jobs:
 
       - name: Publish to npm
         run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Push to git repo
         run: git push --follow-tags
