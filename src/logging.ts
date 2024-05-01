@@ -47,7 +47,7 @@ const formatItem = (item: unknown): string => {
 
   const stringified = (() => {
     try {
-      return stringify(item);
+      return stringify(item).slice(1).slice(0, -1);
     } catch {
       return String(item);
     }
