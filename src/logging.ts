@@ -1,5 +1,5 @@
 import pino, { Logger, LoggerOptions } from "pino";
-import { stringify } from "flatted";
+import { stringify } from "@ungap/structured-clone/json";
 
 type AwaitableLogger = Logger & {
   untilFinished: Promise<void>;
@@ -47,7 +47,7 @@ const formatItem = (item: unknown): string => {
 
   const stringified = (() => {
     try {
-      return stringify(item).slice(1).slice(0, -1);
+      return stringify(item);
     } catch {
       return String(item);
     }

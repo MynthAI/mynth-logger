@@ -54,13 +54,13 @@
     "no-constant-condition": "off",
     "file-extension-in-import-ts/file-extension-in-import-ts": "error",
     "import/no-unresolved": ["error", { "ignore": ["\\.js$"] }],
-    "no-restricted-imports": ["error", { "patterns": ["src/*"] }]
+    "no-restricted-imports": ["error", { "patterns": ["src/*"] }],
+    "import/no-unresolved": "off"
   },
   "overrides": [
     {
       "files": ["tests/**/*.ts"],
       "rules": {
-        "import/no-unresolved": "off",
         "file-extension-in-import-ts/file-extension-in-import-ts": "off",
         "ava/no-ignored-test-files": "off"
       }
