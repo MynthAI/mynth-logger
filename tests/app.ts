@@ -57,6 +57,8 @@ const run = async () => {
   }
 
   console.log("This is concatenating an object", {});
+
+  console.log("This is an object with bigint", { name: "bigint", value: 100n });
 };
 
 run();
