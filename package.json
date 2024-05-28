@@ -6,7 +6,7 @@
   "typings": "dist/src/index.d.ts",
   "scripts": {
     "build": "npx tsc",
-    "test": "npx tsc && npx ava",
+    "test": "npx ava",
     "test:pretty": "npx tsc && TEST_PRETTY=true npx ava",
     "logs": "npx tsc && node dist/src/run.js",
     "prettier": "npx prettier -w '**/*.{js,jsx,ts,tsx,json,yml.j2,yml,yaml,.*}'",
@@ -46,7 +46,14 @@
   },
   "ava": {
     "files": [
-      "dist/tests/**/*.test.js"
+      "**/*.test.ts"
+    ],
+    "extensions": {
+      "ts": "module"
+    },
+    "nodeArguments": [
+      "--loader=tsx",
+      "--no-warnings"
     ]
   }
 }
