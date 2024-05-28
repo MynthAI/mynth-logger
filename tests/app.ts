@@ -2,6 +2,7 @@ import { createConsola, LogObject, LogLevel } from "consola";
 import { format } from "src/logging";
 import { type } from "arktype";
 import axios from "axios";
+import axiosRetry, { exponentialDelay } from "axios-retry";
 
 const Discord = type({
   discord: type("boolean").narrow((v) => v),
@@ -36,8 +37,14 @@ const levelMap: Record<LogLevel, string> = {
 };
 
 const sendToDiscord = async (description: string, options: Discord) => {
+  const axiosInstance = axios.create();
+  axiosRetry(axiosInstance, {
+    retries: 3,
+    retryDelay: exponentialDelay,
+  });
+
   try {
-    await axios.post(options.webhookUrl, {
+    await axiosInstance.post(options.webhookUrl, {
       embeds: [
         {
           title: options.title,

@@ -24,7 +24,8 @@
   "dependencies": {
     "@ungap/structured-clone": "^1.2.0",
     "arktype": "^2.0.0-dev.16",
-    "axios": "^1.6.8",
+    "axios": "^1.7.2",
+    "axios-retry": "^4.3.0",
     "consola": "^3.2.3",
     "pino": "^8.19.0"
   },
