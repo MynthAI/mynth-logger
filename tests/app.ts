@@ -4,6 +4,9 @@ import { type } from "arktype";
 
 const Discord = type({
   discord: type("boolean").narrow((v) => v),
+  color: "string",
+  title: "string",
+  webhookUrl: "string",
 });
 
 type Discord = typeof Discord.infer;
@@ -121,7 +124,12 @@ const run = async () => {
 
   console.log("This is an object with bigint", { name: "bigint", value: 100n });
 
-  console.info("Sending this message to discord", { discord: true });
+  console.info("Sending this message to discord", {
+    discord: true,
+    color: "2404635",
+    title: "This is a test",
+    webhookUrl: process.env["DISCORD_TEST_WEB_HOOK"],
+  });
 };
 
 run();
