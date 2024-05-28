@@ -1,5 +1,5 @@
 import { createConsola, LogObject, LogLevel } from "consola";
-import { format } from "src/logging";
+import { format } from "src/format.js";
 import { type } from "arktype";
 import axios from "axios";
 import axiosRetry, { exponentialDelay } from "axios-retry";
