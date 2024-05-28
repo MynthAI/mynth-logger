@@ -1,19 +1,51 @@
 import { createConsola, LogObject } from "consola";
 import { format } from "src/logging";
+import { type } from "arktype";
+
+const Discord = type({
+  discord: type("boolean").narrow((v) => v),
+});
+
+type Discord = typeof Discord.infer;
+
+const getDiscord = (args: unknown[]): [Discord, unknown[]] => {
+  for (let i = 0; i < args.length; i++) {
+    const discord = Discord(args[i]);
+    if (discord instanceof type.errors) continue;
+
+    return [discord, args.filter((_, j) => j !== i)];
+  }
+
+  return [{ discord: false }, args];
+};
+
+const filterDiscord = (args: unknown[]) => getDiscord(args)[1];
 
 const setupLogging = (dev: boolean = false) => {
   const consola = createConsola({ fancy: true });
   const jsonReporter = {
     log: (logObj: LogObject) => {
+      const args = filterDiscord(logObj.args);
       const message = JSON.stringify({
         level: logObj.level,
-        message: format(logObj.args),
+        message: format(args),
       });
       process.stdout.write(`${message}\n`);
     },
   };
 
+  const discordReporter = {
+    log: (logObj: LogObject) => {
+      const [discord, args] = getDiscord(logObj.args);
+      if (!discord.discord) return;
+
+      const message = format(args);
+      process.stdout.write(`DISCORD MESSAGE: ${message}\n`);
+    },
+  };
+
   if (!dev) consola.setReporters([jsonReporter]);
+  consola.addReporter(discordReporter);
 
   consola.wrapConsole();
   return consola;
@@ -78,6 +110,8 @@ const run = async () => {
   console.log("This is concatenating an object", {});
 
   console.log("This is an object with bigint", { name: "bigint", value: 100n });
+
+  console.info("Sending this message to discord", { discord: true });
 };
 
 run();
