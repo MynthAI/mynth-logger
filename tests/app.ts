@@ -1,4 +1,4 @@
-import { createConsola, LogObject } from "consola";
+import { createConsola, LogObject, LogLevel } from "consola";
 import { format } from "src/logging";
 import { type } from "arktype";
 
@@ -19,12 +19,21 @@ const getDiscord = (args: unknown[]): [Discord, unknown[]] => {
   return [{ discord: false }, args];
 };
 
+const levelMap: Record<LogLevel, string> = {
+  0: "error",
+  1: "warn",
+  2: "info",
+  3: "info",
+  4: "debug",
+  5: "debug",
+};
+
 const setupLogging = (dev: boolean = false) => {
   const consola = createConsola({ fancy: true });
   const jsonReporter = {
     log: (logObj: LogObject) => {
       const message = JSON.stringify({
-        level: logObj.level,
+        level: levelMap[logObj.level] || "debug",
         message: format(logObj.args),
       });
       process.stdout.write(`${message}\n`);
