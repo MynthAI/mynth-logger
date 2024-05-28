@@ -12,14 +12,10 @@ const Discord = type({
 
 type Discord = typeof Discord.infer;
 
-const NullDiscord: Discord = {
-  discord: false,
-  color: "",
-  title: "",
-  webhookUrl: "",
-};
+const NullDiscord = { discord: false } as const;
+type NullDiscord = typeof NullDiscord;
 
-const getDiscord = (args: unknown[]): [Discord, unknown[]] => {
+const getDiscord = (args: unknown[]): [Discord | NullDiscord, unknown[]] => {
   for (let i = 0; i < args.length; i++) {
     const discord = Discord(args[i]);
     if (discord instanceof type.errors) continue;
