@@ -45,7 +45,7 @@ const setupLogging = (dev: boolean = false) => {
   };
 
   if (!dev) consola.setReporters([jsonReporter]);
-  consola.addReporter(discordReporter);
+  consola.setReporters([discordReporter, ...consola.options.reporters]);
 
   consola.wrapConsole();
   return consola;
