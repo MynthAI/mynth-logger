@@ -19,16 +19,13 @@ const getDiscord = (args: unknown[]): [Discord, unknown[]] => {
   return [{ discord: false }, args];
 };
 
-const filterDiscord = (args: unknown[]) => getDiscord(args)[1];
-
 const setupLogging = (dev: boolean = false) => {
   const consola = createConsola({ fancy: true });
   const jsonReporter = {
     log: (logObj: LogObject) => {
-      const args = filterDiscord(logObj.args);
       const message = JSON.stringify({
         level: logObj.level,
-        message: format(args),
+        message: format(logObj.args),
       });
       process.stdout.write(`${message}\n`);
     },
@@ -41,6 +38,10 @@ const setupLogging = (dev: boolean = false) => {
 
       const message = format(args);
       process.stdout.write(`DISCORD MESSAGE: ${message}\n`);
+
+      // Filter Discord data before the other reporters
+      // process the message
+      logObj.args = args;
     },
   };
 
