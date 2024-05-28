@@ -49,7 +49,7 @@ jobs:
         run: npm ci --include dev
 
       - name: Run tests
-        run: npx tsx tests/app.rs
+        run: npx tsx tests/app.ts
 
   lint:
     runs-on: ubuntu-latest
