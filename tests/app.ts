@@ -1,4 +1,23 @@
-import { setupLogging } from "../src/index";
+import { createConsola, LogObject } from "consola";
+import { format } from "src/logging";
+
+const setupLogging = (dev: boolean = false) => {
+  const consola = createConsola({ fancy: true });
+  const jsonReporter = {
+    log: (logObj: LogObject) => {
+      const message = JSON.stringify({
+        level: logObj.level,
+        message: format(logObj.args),
+      });
+      process.stdout.write(`${message}\n`);
+    },
+  };
+
+  if (!dev) consola.setReporters([jsonReporter]);
+
+  consola.wrapConsole();
+  return consola;
+};
 
 const run = async () => {
   setupLogging();

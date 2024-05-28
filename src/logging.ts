@@ -110,4 +110,4 @@ const setupLogging = (args: Params = {}): AwaitableLogger => {
   return logger;
 };
 
-export { AwaitableLogger, KnownTransports, setupLogging };
+export { AwaitableLogger, KnownTransports, setupLogging, format };
