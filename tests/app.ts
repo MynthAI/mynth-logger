@@ -1,4 +1,4 @@
-import { setupLogging } from "../src/index";
+import { setupLogging } from "mynth-logger";
 
 const run = async () => {
   setupLogging();
@@ -59,6 +59,13 @@ const run = async () => {
   console.log("This is concatenating an object", {});
 
   console.log("This is an object with bigint", { name: "bigint", value: 100n });
+
+  console.info("Sending this message to discord", {
+    discord: true,
+    color: "2404635",
+    title: "This is a test",
+    webhookUrl: process.env["DISCORD_TEST_WEB_HOOK"],
+  });
 };
 
 run();
