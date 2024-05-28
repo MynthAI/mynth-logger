@@ -7,7 +7,6 @@
   "scripts": {
     "build": "npx tsc",
     "test": "npx ava",
-    "test:pretty": "npx tsc && TEST_PRETTY=true npx ava",
     "logs": "npx tsc && node dist/src/run.js",
     "prettier": "npx prettier -w '**/*.{js,jsx,ts,tsx,json,yml.j2,yml,yaml,.*}'",
     "lint": "concurrently \"npx prettier --check '**/*.{js,jsx,ts,tsx,json,yml.j2,yml,yaml,.*}'\" \"npx eslint . --max-warnings=0\""
