@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": "./",
+    "baseUrl": "./src",
     "target": "es2022",
     "module": "CommonJS",
     "moduleResolution": "Node",
@@ -10,6 +10,11 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
     "declaration": true,
-    "declarationDir": "dist"
-  }
+    "declarationDir": "dist",
+    "paths": {
+      "mynth-logger": ["index"]
+    }
+  },
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["node_modules"]
 }

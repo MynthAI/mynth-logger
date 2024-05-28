@@ -1,5 +1,5 @@
 import test from "ava";
-import { setupLogging } from "../src/index";
+import { setupLogging } from "mynth-logger";
 
 test.before(() => {
   setupLogging();
