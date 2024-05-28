@@ -34,13 +34,6 @@ analysis, and alerting.
 npm install mynth-logger
 ```
 
-**For local development**, install `pino-pretty` to enable colorful log
-output:
-
-``` bash
-npm install --save-dev pino-pretty
-```
-
 ### Usage
 
 **Import and set up logging** in your entrypoint script:
