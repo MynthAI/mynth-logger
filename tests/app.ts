@@ -1,6 +1,7 @@
 import { createConsola, LogObject, LogLevel } from "consola";
 import { format } from "src/logging";
 import { type } from "arktype";
+import axios from "axios";
 
 const Discord = type({
   discord: type("boolean").narrow((v) => v),
@@ -11,6 +12,13 @@ const Discord = type({
 
 type Discord = typeof Discord.infer;
 
+const NullDiscord: Discord = {
+  discord: false,
+  color: "",
+  title: "",
+  webhookUrl: "",
+};
+
 const getDiscord = (args: unknown[]): [Discord, unknown[]] => {
   for (let i = 0; i < args.length; i++) {
     const discord = Discord(args[i]);
@@ -19,7 +27,7 @@ const getDiscord = (args: unknown[]): [Discord, unknown[]] => {
     return [discord, args.filter((_, j) => j !== i)];
   }
 
-  return [{ discord: false }, args];
+  return [NullDiscord, args];
 };
 
 const levelMap: Record<LogLevel, string> = {
@@ -29,6 +37,22 @@ const levelMap: Record<LogLevel, string> = {
   3: "info",
   4: "debug",
   5: "debug",
+};
+
+const sendToDiscord = async (description: string, options: Discord) => {
+  try {
+    await axios.post(options.webhookUrl, {
+      embeds: [
+        {
+          title: options.title,
+          description,
+          color: options.color,
+        },
+      ],
+    });
+  } catch (error) {
+    console.error("Unable to send message to Discord", error);
+  }
 };
 
 const setupLogging = (dev: boolean = false) => {
@@ -48,8 +72,7 @@ const setupLogging = (dev: boolean = false) => {
       const [discord, args] = getDiscord(logObj.args);
       if (!discord.discord) return;
 
-      const message = format(args);
-      process.stdout.write(`DISCORD MESSAGE: ${message}\n`);
+      sendToDiscord(format(args), discord);
 
       // Filter Discord data before the other reporters
       // process the message
