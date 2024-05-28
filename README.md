@@ -52,12 +52,29 @@ formatting the logs appropriately based on the environment:
 console.log('This is a log message');
 ```
 
-In **development**, you’ll see colorful logs in the terminal.
+In **development** (when NODE\_ENV isn’t set to `production`), you’ll
+see colorful logs in the terminal.
 
-In **production**, logs will be output in JSON format to stdout.
+In **production** (when NODE\_ENV is set to `production`), logs will be
+output in JSON format to stdout.
 
 ## Configuration
 
 No additional configuration is required to start using Mynth Logger.
-However, you can customize the behavior of the logging by passing
-options to `setupLogging()` as needed.
+
+## Discord
+
+To send a message to Discord:
+
+``` typescript
+console.info("Sending this message to discord", {
+  discord: true,
+  color: "2404635",
+  title: "This is a test",
+  webhookUrl,
+});
+```
+
+A valid Discord webhook URL needs to be passed in as a parameter. This
+will be used to send the message to Discord, but it won’t be outputted
+to the logs.
