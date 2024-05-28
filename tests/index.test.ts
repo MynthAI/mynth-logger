@@ -1,19 +1,8 @@
 import test from "ava";
-import { AwaitableLogger, setupLogging } from "../src/index";
-
-let logger: AwaitableLogger | undefined;
-
-const sleep = (ms: number) => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-};
+import { setupLogging } from "../src/index";
 
 test.before(() => {
-  logger = setupLogging({ pretty: "TEST_PRETTY" in process.env });
-});
-
-test.afterEach(async () => {
-  await sleep(100);
-  logger && (await logger.untilFinished);
+  setupLogging();
 });
 
 test.serial("logs display to terminal", (t) => {

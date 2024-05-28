@@ -1,16 +1,4 @@
-import { createConsola } from "consola";
-import DatadogReporter from "src/reporters/datadog";
-import DiscordReporter from "src/reporters/discord";
-
-const setupLogging = (dev: boolean = false) => {
-  const consola = createConsola({ fancy: true });
-
-  if (!dev) consola.setReporters([DatadogReporter]);
-  consola.setReporters([DiscordReporter, ...consola.options.reporters]);
-
-  consola.wrapConsole();
-  return consola;
-};
+import { setupLogging } from "../src/index";
 
 const run = async () => {
   setupLogging();
