@@ -4,8 +4,6 @@ import { type } from "arktype";
 import axios from "axios";
 import axiosRetry, { exponentialDelay } from "axios-retry";
 
-console.trace(type);
-
 const Discord = type({
   discord: type("boolean").narrow((v) => v),
   color: "string",
