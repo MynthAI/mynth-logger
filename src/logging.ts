@@ -3,7 +3,7 @@ import DatadogReporter from "./reporters/datadog.js";
 import DiscordReporter from "./reporters/discord.js";
 
 const setupLogging = () => {
-  const consola = createConsola({ fancy: true });
+  const consola = createConsola({ fancy: true, level: 5 });
 
   if (process.env.NODE_ENV === "production")
     consola.setReporters([DatadogReporter]);

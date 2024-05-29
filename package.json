@@ -5,7 +5,7 @@
   "main": "dist/src/index.js",
   "typings": "dist/src/index.d.ts",
   "scripts": {
-    "build": "npx tsc",
+    "build": "rm -rf dist && npx tsc",
     "test": "npx ava",
     "logs": "npx tsc && node dist/src/run.js",
     "prettier": "npx prettier -w '**/*.{js,jsx,ts,tsx,json,yml.j2,yml,yaml,.*}'",
