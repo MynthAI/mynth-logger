@@ -1,8 +1,7 @@
 import { LogObject } from "consola";
 import { format } from "../format.js";
 import { type } from "arktype";
-import axios from "axios";
-import axiosRetry, { exponentialDelay } from "axios-retry";
+import got from "got";
 
 const Discord = type({
   discord: type("boolean").narrow((v) => v),
@@ -42,14 +41,8 @@ const getDiscord = (args: unknown[]): [Discord | NullDiscord, unknown[]] => {
 };
 
 const sendToDiscord = async (description: string, options: Discord) => {
-  const axiosInstance = axios.create();
-  axiosRetry(axiosInstance, {
-    retries: 3,
-    retryDelay: exponentialDelay,
-  });
-
-  try {
-    await axiosInstance.post(options.webhookUrl, {
+  const data = {
+    json: {
       embeds: [
         {
           title: options.title,
@@ -57,7 +50,12 @@ const sendToDiscord = async (description: string, options: Discord) => {
           color: options.color,
         },
       ],
-    });
+    },
+    retry: { limit: 5 },
+  };
+
+  try {
+    await got.post(options.webhookUrl, data);
   } catch (error) {
     console.error("Unable to send message to Discord", error);
   }
