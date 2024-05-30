@@ -51,7 +51,7 @@ const sendToDiscord = async (description: string, options: Discord) => {
         },
       ],
     },
-    retry: { limit: 3 },
+    retry: { limit: 5 },
   };
 
   try {
