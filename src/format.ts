@@ -1,4 +1,10 @@
 import { stringify } from "@ungap/structured-clone/json";
+import { type } from "arktype";
+
+const ErrorType = type({
+  message: "string",
+  "stack?": "string",
+});
 
 const formatItem = (item: unknown): string => {
   if (typeof item === "undefined") {
@@ -12,13 +18,8 @@ const formatItem = (item: unknown): string => {
   }
 
   // Check if this is an Error
-  if (
-    item &&
-    typeof item === "object" &&
-    "message" in item &&
-    typeof item.message === "string"
-  )
-    return item.message;
+  const error = ErrorType(item);
+  if (!(error instanceof type.errors)) return `${error.message};${error.stack}`;
 
   // Check if this is a string
   if (typeof item === "string") return item;
