@@ -18,9 +18,6 @@ const formatItem = (item: unknown): string => {
   const error = ErrorType(item);
   if (!(error instanceof type.errors)) return error.stack || error.message;
 
-  // Check if this is a string
-  if (typeof item === "string") return item;
-
   const stringified = (() => {
     try {
       return stringify(item);
