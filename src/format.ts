@@ -16,7 +16,7 @@ const formatItem = (item: unknown): string => {
 
   // Check if this is an Error
   const error = ErrorType(item);
-  if (!(error instanceof type.errors)) return `${error.message};${error.stack}`;
+  if (!(error instanceof type.errors)) return error.stack || error.message;
 
   // Check if this is a string
   if (typeof item === "string") return item;
