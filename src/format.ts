@@ -7,15 +7,12 @@ const ErrorType = type({
 });
 
 const formatItem = (item: unknown): string => {
-  if (typeof item === "undefined") {
-    return "undefined";
-  }
+  if (typeof item === "undefined") return "undefined";
 
   // Remove colors from strings
-  if (typeof item === "string") {
+  if (typeof item === "string")
     // eslint-disable-next-line no-control-regex
     return item.replace(/\x1b\[[0-9;]*m/g, "");
-  }
 
   // Check if this is an Error
   const error = ErrorType(item);
