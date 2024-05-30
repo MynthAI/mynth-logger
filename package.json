@@ -28,9 +28,8 @@
   },
   "dependencies": {
     "@ungap/structured-clone": "^1.2.0",
-    "axios": "^1.7.2",
-    "axios-retry": "^4.3.0",
-    "consola": "^3.2.3"
+    "consola": "^3.2.3",
+    "got": "^13.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",

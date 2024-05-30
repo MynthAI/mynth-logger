@@ -3,7 +3,7 @@
     "baseUrl": "./src",
     "target": "es2022",
     "module": "es2022",
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
