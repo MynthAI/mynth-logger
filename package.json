@@ -22,9 +22,7 @@
     "url": "git@github.com-mynth:MynthAI/mynth-logger.git"
   },
   "peerDependencies": {
-    "@arktype/schema": ">=0.1.8",
-    "@arktype/util": ">=0.0.45",
-    "arktype": "^2.0.0-beta.1"
+    "arktype": "^2.0.0-rc.7"
   },
   "dependencies": {
     "@ungap/structured-clone": "^1.2.0",
