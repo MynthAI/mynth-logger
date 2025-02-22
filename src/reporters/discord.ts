@@ -4,10 +4,15 @@ import { type } from "arktype";
 import got from "got";
 
 const Discord = type({
-  discord: type("boolean").narrow((v) => v),
+  discord: "true",
   color: "string",
   title: "string",
-  webhookUrl: "string",
+  "webhookUrl?": "string.url",
+});
+
+const ConfigureDiscord = type({
+  discord: "true",
+  setWebhookUrl: "string.url",
 });
 
 type Discord = typeof Discord.infer;
@@ -17,16 +22,42 @@ const NullDiscord = { discord: false } as const;
 type NullDiscord = typeof NullDiscord;
 
 const Reporter = {
+  webhookUrl: "",
   log: (logObj: LogObject) => {
+    if (configureDiscord(logObj.args)) {
+      logObj.args = ["Set Discord webhook URL"];
+      return;
+    }
+
     const [discord, args] = getDiscord(logObj.args);
     if (!discord.discord) return;
 
-    sendToDiscord(format(args), discord);
+    const webhookUrl = discord.webhookUrl || Reporter.webhookUrl;
+
+    if (!webhookUrl) {
+      console.error("Discord webhook URL is missing");
+      return;
+    }
+
+    sendToDiscord(format(args), discord, webhookUrl);
 
     // Filter Discord data before the other reporters
     // process the message
     logObj.args = args;
   },
+};
+
+const configureDiscord = (args: unknown[]): boolean => {
+  for (const arg of args) {
+    const config = ConfigureDiscord(arg);
+
+    if (!(config instanceof type.errors)) {
+      Reporter.webhookUrl = config.setWebhookUrl;
+      return true;
+    }
+  }
+
+  return false;
 };
 
 const getDiscord = (args: unknown[]): [Discord | NullDiscord, unknown[]] => {
@@ -40,7 +71,11 @@ const getDiscord = (args: unknown[]): [Discord | NullDiscord, unknown[]] => {
   return [NullDiscord, args];
 };
 
-const sendToDiscord = async (description: string, options: Discord) => {
+const sendToDiscord = async (
+  description: string,
+  options: Discord,
+  webhookUrl: string
+) => {
   const data = {
     json: {
       embeds: [
@@ -55,7 +90,7 @@ const sendToDiscord = async (description: string, options: Discord) => {
   };
 
   try {
-    await got.post(options.webhookUrl, data);
+    await got.post(webhookUrl, data);
   } catch (error) {
     console.error("Unable to send message to Discord", error);
   }
