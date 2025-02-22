@@ -24,6 +24,11 @@ type NullDiscord = typeof NullDiscord;
 const Reporter = {
   webhookUrl: "",
   log: (logObj: LogObject) => {
+    if (configureDiscord(logObj.args)) {
+      logObj.args = ["Set Discord webhook URL"];
+      return;
+    }
+
     const [discord, args] = getDiscord(logObj.args);
     if (!discord.discord) return;
 
@@ -42,15 +47,21 @@ const Reporter = {
   },
 };
 
-const getDiscord = (args: unknown[]): [Discord | NullDiscord, unknown[]] => {
-  for (let i = 0; i < args.length; i++) {
-    const config = ConfigureDiscord(args[i]);
+const configureDiscord = (args: unknown[]): boolean => {
+  for (const arg of args) {
+    const config = ConfigureDiscord(arg);
 
     if (!(config instanceof type.errors)) {
       Reporter.webhookUrl = config.setWebhookUrl;
-      continue;
+      return true;
     }
+  }
 
+  return false;
+};
+
+const getDiscord = (args: unknown[]): [Discord | NullDiscord, unknown[]] => {
+  for (let i = 0; i < args.length; i++) {
     const discord = Discord(args[i]);
     if (discord instanceof type.errors) continue;
 
