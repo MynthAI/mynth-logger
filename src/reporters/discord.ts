@@ -7,7 +7,12 @@ const Discord = type({
   discord: "true",
   color: "string",
   title: "string",
-  webhookUrl: "string.url",
+  "webhookUrl?": "string.url",
+});
+
+const ConfigureDiscord = type({
+  discord: "true",
+  setWebhookUrl: "string.url",
 });
 
 type Discord = typeof Discord.infer;
@@ -17,11 +22,19 @@ const NullDiscord = { discord: false } as const;
 type NullDiscord = typeof NullDiscord;
 
 const Reporter = {
+  webhookUrl: "",
   log: (logObj: LogObject) => {
     const [discord, args] = getDiscord(logObj.args);
     if (!discord.discord) return;
 
-    sendToDiscord(format(args), discord);
+    const webhookUrl = discord.webhookUrl || Reporter.webhookUrl;
+
+    if (!webhookUrl) {
+      console.error("Discord webhook URL is missing");
+      return;
+    }
+
+    sendToDiscord(format(args), discord, webhookUrl);
 
     // Filter Discord data before the other reporters
     // process the message
@@ -31,6 +44,13 @@ const Reporter = {
 
 const getDiscord = (args: unknown[]): [Discord | NullDiscord, unknown[]] => {
   for (let i = 0; i < args.length; i++) {
+    const config = ConfigureDiscord(args[i]);
+
+    if (!(config instanceof type.errors)) {
+      Reporter.webhookUrl = config.setWebhookUrl;
+      continue;
+    }
+
     const discord = Discord(args[i]);
     if (discord instanceof type.errors) continue;
 
@@ -40,7 +60,11 @@ const getDiscord = (args: unknown[]): [Discord | NullDiscord, unknown[]] => {
   return [NullDiscord, args];
 };
 
-const sendToDiscord = async (description: string, options: Discord) => {
+const sendToDiscord = async (
+  description: string,
+  options: Discord,
+  webhookUrl: string
+) => {
   const data = {
     json: {
       embeds: [
@@ -55,7 +79,7 @@ const sendToDiscord = async (description: string, options: Discord) => {
   };
 
   try {
-    await got.post(options.webhookUrl, data);
+    await got.post(webhookUrl, data);
   } catch (error) {
     console.error("Unable to send message to Discord", error);
   }
