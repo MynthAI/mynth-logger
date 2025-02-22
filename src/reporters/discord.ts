@@ -4,10 +4,10 @@ import { type } from "arktype";
 import got from "got";
 
 const Discord = type({
-  discord: type("boolean").narrow((v) => v),
+  discord: "true",
   color: "string",
   title: "string",
-  webhookUrl: "string",
+  webhookUrl: "string.url",
 });
 
 type Discord = typeof Discord.infer;
