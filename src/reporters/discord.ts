@@ -16,6 +16,7 @@ const ConfigureDiscord = type({
 });
 
 type Discord = typeof Discord.infer;
+type ConfigureDiscord = typeof ConfigureDiscord.infer;
 
 const NullDiscord = { discord: false } as const;
 
@@ -97,3 +98,4 @@ const sendToDiscord = async (
 };
 
 export default Reporter;
+export { ConfigureDiscord, Discord };
