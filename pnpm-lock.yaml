@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@hackylabs/deep-redact':
+        specifier: ^3.0.4
+        version: 3.0.4
       '@ungap/structured-clone':
         specifier: ^1.3.0
         version: 1.3.0
@@ -318,6 +321,9 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@hackylabs/deep-redact@3.0.4':
+    resolution: {integrity: sha512-N0YS4KgBfoqwt90BwjPTDGriZUEFG0xKcU5DI/qKR6d8X731Ump/7sSefUMkccbS6MZ3P9T65ED99KHnn06FEA==}
 
   '@isaacs/cliui@9.0.0':
     resolution: {integrity: sha512-AokJm4tuBHillT+FpMtxQ60n8ObyXBatq7jD2/JA9dxbDDokKQm8KMht5ibGzLVU9IJDIKK4TPKgMHEYMn3lMg==}
@@ -1577,6 +1583,8 @@ snapshots:
 
   '@esbuild/win32-x64@0.27.3':
     optional: true
+
+  '@hackylabs/deep-redact@3.0.4': {}
 
   '@isaacs/cliui@9.0.0': {}
 
