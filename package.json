@@ -20,7 +20,10 @@
     "prettier": "pnpm npm-run-all prettier:format prettier:check prettier:lint",
     "prettier:check": "pnpm biome check --write .",
     "prettier:format": "pnpm biome format --write .",
-    "prettier:lint": "pnpm biome lint --write ."
+    "prettier:lint": "pnpm biome lint --write .",
+    "slop": "pnpm npm-run-all slop:braces slop:arrows prettier",
+    "slop:arrows": "pnpm convert-to-arrow .",
+    "slop:braces": "pnpm exec sg scan --rule .ast-grep/rules/strip-braces.yml -U ."
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
@@ -40,9 +43,11 @@
     "got": "^14.6.6"
   },
   "devDependencies": {
+    "@ast-grep/cli": "^0.40.5",
     "@biomejs/biome": "^2.4.2",
     "@types/node": "^25.2.3",
     "@types/ungap__structured-clone": "^1.2.0",
+    "convert-to-arrow": "^1.0.21",
     "npm-run-all": "^4.1.5",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
