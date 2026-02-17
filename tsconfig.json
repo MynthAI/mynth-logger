@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "baseUrl": "./src",
-    "target": "es2022",
-    "module": "es2022",
-    "moduleResolution": "bundler",
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

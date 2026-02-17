@@ -1,4 +1,4 @@
-import { setupLogging } from "mynth-logger";
+import { setupLogging } from "../src/index.js";
 
 const run = async () => {
   setupLogging();
