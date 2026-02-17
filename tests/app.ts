@@ -1,4 +1,4 @@
-import { setupLogging } from "mynth-logger";
+import { setupLogging } from "../src/index.js";
 
 const run = async () => {
   setupLogging();
@@ -8,6 +8,12 @@ const run = async () => {
   console.debug("Hello, this is a debug log");
   console.warn("Hello, this is a warn log");
   console.error("Hello, this is an error log");
+  console.log(
+    "This is my seed phrase: ordinary quality amount solid fox guess peasant merit midnight noodle final brown pretty stable six fox beef engage waste uniform evoke flat survey crane",
+  );
+  console.log(
+    "This is my private key: 4fa7614bdd07ab15b11d2365466536ba160c06050ade0888a3aa985a5522ab22",
+  );
 
   try {
     throw new Error("An Error was thrown");
