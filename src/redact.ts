@@ -23,6 +23,8 @@ const replaceBip39MnemonicMatches = (value: string, pattern: RegExp) =>
     // Normalize spacing; validateMnemonic expects words separated by single spaces
     const normalized = phrase.trim().toLowerCase().replace(/\s+/g, " ");
     if (!validateMnemonic(normalized, wordlist)) return match;
+
+    // Replace only the phrase portion (preserves surrounding quotes/keywords if any)
     return match.replace(phrase, replacement);
   });
 
@@ -44,10 +46,10 @@ const BASE64 =
 const BASE58 = /\b[1-9A-HJ-NP-Za-km-z]{32,}\b/g;
 
 // 4) Mnemonic seed phrases
-//    Strategy stays the same as before, but we now validate candidates with @scure/bip39.
-//    - 12 to 24 lowercase-ish words (2–8 chars) separated by spaces
-const WORD = "[a-z]{2,8}";
-const PHRASE_12_TO_24 = `(?:${WORD}\\s){11,23}${WORD}`;
+//    We validate candidates with @scure/bip39 to avoid false positives.
+//    - 12 to 24 words separated by whitespace
+const WORD = "[a-zA-Z]{2,8}";
+const PHRASE_12_TO_24 = `(?:${WORD}\\s+){11,23}${WORD}`;
 
 const MNEMONIC_WITH_KEYWORD = new RegExp(
   // keyword then up to ~40 chars (like ":" or whitespace) then the phrase
@@ -58,8 +60,13 @@ const MNEMONIC_WITH_KEYWORD = new RegExp(
 const MNEMONIC_QUOTED = new RegExp(
   // quoted/bracketed phrase alone
   String.raw`(?:["'(\[])\s*(${PHRASE_12_TO_24})\s*(?:["')\]])`,
-  "g",
+  "gi",
 );
+
+// NEW: Bare mnemonic phrases (no keyword, no quotes).
+// This is what your console.log example is: just the phrase by itself.
+// Validation keeps false-positives low.
+const MNEMONIC_BARE = new RegExp(String.raw`\b(${PHRASE_12_TO_24})\b`, "gi");
 
 const redactor = new DeepRedact({
   // stringTests runs regex checks against string values (including flat strings)
@@ -70,6 +77,7 @@ const redactor = new DeepRedact({
     { pattern: BASE58, replacer: replaceAllMatches },
     { pattern: MNEMONIC_WITH_KEYWORD, replacer: replaceBip39MnemonicMatches },
     { pattern: MNEMONIC_QUOTED, replacer: replaceBip39MnemonicMatches },
+    { pattern: MNEMONIC_BARE, replacer: replaceBip39MnemonicMatches },
   ],
   replacement,
   // serialise mainly matters for objects; keeping it false avoids surprises.
