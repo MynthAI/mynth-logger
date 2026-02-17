@@ -1,5 +1,6 @@
 import { stringify } from "@ungap/structured-clone/json";
 import { type } from "arktype";
+import { redact } from "./redact.js";
 
 const ErrorType = type({
   message: "string",
@@ -12,7 +13,7 @@ const formatItem = (item: unknown): string => {
   // Remove colors from strings
   if (typeof item === "string")
     // biome-ignore lint/suspicious/noControlCharactersInRegex: stripping ANSI escape codes
-    return item.replace(/\x1b\[[0-9;]*m/g, "");
+    return redact(item.replace(/\x1b\[[0-9;]*m/g, ""));
 
   // Check if this is an Error
   const error = ErrorType(item);
@@ -26,7 +27,7 @@ const formatItem = (item: unknown): string => {
     }
   })();
 
-  return stringified.replace(/^'|'$/g, "");
+  return redact(stringified.replace(/^'|'$/g, ""));
 };
 
 const format = (items: unknown[]): string =>
