@@ -1,11 +1,13 @@
 import { DeepRedact } from "@hackylabs/deep-redact/index.ts";
+import { validateMnemonic } from "@scure/bip39";
+import { wordlist } from "@scure/bip39/wordlists/english.js";
 
 /**
  * Create a redactor that censors things that *look like secrets* inside strings:
  * - long hex (optionally 0x-prefixed)
  * - long base64 blobs
  * - long base58 blobs
- * - mnemonic seed phrases (heuristic; tries to avoid redacting normal sentences)
+ * - mnemonic seed phrases (validated via BIP39 english wordlist)
  *
  * Returns a function `redactSecrets(text)` you can run on log lines, errors, etc.
  */
@@ -17,6 +19,15 @@ export const createSecretStringRedactor = (opts?: {
   // Generic replacer: redact ALL matches within the string.
   const replaceAllMatches = (value: string, pattern: RegExp) =>
     value.replace(pattern, replacement);
+
+  // Mnemonic replacer: only redact if the captured phrase is a valid BIP39 mnemonic.
+  const replaceBip39MnemonicMatches = (value: string, pattern: RegExp) =>
+    value.replace(pattern, (match: string, phrase: string) => {
+      // Normalize spacing; validateMnemonic expects words separated by single spaces
+      const normalized = phrase.trim().toLowerCase().replace(/\s+/g, " ");
+      if (!validateMnemonic(normalized, wordlist)) return match;
+      return match.replace(phrase, replacement);
+    });
 
   // --- Patterns ---
   // 1) Hex secrets (API keys, hashes, tokens)
@@ -35,15 +46,10 @@ export const createSecretStringRedactor = (opts?: {
   //    - require 32+ chars to reduce false positives
   const BASE58 = /\b[1-9A-HJ-NP-Za-km-z]{32,}\b/g;
 
-  // 4) Mnemonic seed phrases (heuristic)
-  //    Regex-only detection is imperfect without the BIP39 wordlist.
-  //    Strategy:
-  //      A) Strong signal: a nearby keyword ("seed", "mnemonic", "recovery phrase")
-  //      B) Or the phrase is quoted/bracketed (often how people paste it)
-  //
-  //    - 12 to 24 lowercase-ish words (3–8 chars) separated by spaces
-  //    - kept fairly strict to reduce “normal paragraph” matches
-  const WORD = "[a-z]{3,8}";
+  // 4) Mnemonic seed phrases
+  //    Strategy stays the same as before, but we now validate candidates with @scure/bip39.
+  //    - 12 to 24 lowercase-ish words (2–8 chars) separated by spaces
+  const WORD = "[a-z]{2,8}";
   const PHRASE_12_TO_24 = `(?:${WORD}\\s){11,23}${WORD}`;
 
   const MNEMONIC_WITH_KEYWORD = new RegExp(
@@ -60,13 +66,13 @@ export const createSecretStringRedactor = (opts?: {
 
   const redactor = new DeepRedact({
     // stringTests runs regex checks against string values (including flat strings)
-    // and lets us partially redact via replacer. :contentReference[oaicite:1]{index=1}
+    // and lets us partially redact via replacer.
     stringTests: [
       { pattern: HEX, replacer: replaceAllMatches },
       { pattern: BASE64, replacer: replaceAllMatches },
       { pattern: BASE58, replacer: replaceAllMatches },
-      { pattern: MNEMONIC_WITH_KEYWORD, replacer: replaceAllMatches },
-      { pattern: MNEMONIC_QUOTED, replacer: replaceAllMatches },
+      { pattern: MNEMONIC_WITH_KEYWORD, replacer: replaceBip39MnemonicMatches },
+      { pattern: MNEMONIC_QUOTED, replacer: replaceBip39MnemonicMatches },
     ],
     replacement,
     // serialise mainly matters for objects; keeping it false avoids surprises.
