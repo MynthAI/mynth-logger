@@ -1,4 +1,4 @@
-import { beforeAll, it, describe, expect } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { setupLogging } from "../src/index.js";
 
 beforeAll(() => {

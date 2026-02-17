@@ -1,4 +1,4 @@
-import { createConsola, ConsolaOptions } from "consola";
+import { ConsolaOptions, createConsola } from "consola";
 import DatadogReporter from "./reporters/datadog.js";
 import DiscordReporter from "./reporters/discord.js";
 

@@ -11,7 +11,7 @@ const formatItem = (item: unknown): string => {
 
   // Remove colors from strings
   if (typeof item === "string")
-    // eslint-disable-next-line no-control-regex
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: stripping ANSI escape codes
     return item.replace(/\x1b\[[0-9;]*m/g, "");
 
   // Check if this is an Error
@@ -29,10 +29,9 @@ const formatItem = (item: unknown): string => {
   return stringified.replace(/^'|'$/g, "");
 };
 
-const format = (items: unknown[]): string => {
-  return Array.from(items)
+const format = (items: unknown[]): string =>
+  Array.from(items)
     .map((item) => formatItem(item))
     .join(" ");
-};
 
 export { format };

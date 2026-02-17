@@ -1,4 +1,4 @@
-import { LogObject, LogLevel } from "consola";
+import { LogLevel, LogObject } from "consola";
 import { format } from "../format.js";
 
 const levelMap: Record<LogLevel, string> = {

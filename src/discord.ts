@@ -1,5 +1,5 @@
-import { ConfigureDiscord, Discord } from "./reporters/discord.js";
 import { type } from "arktype";
+import { ConfigureDiscord, Discord } from "./reporters/discord.js";
 
 enum color {
   green = "2404635",
@@ -14,7 +14,7 @@ const log = (
   level: "debug" | "info" | "log" | "error",
   color: color | string,
   title: string,
-  message: string
+  message: string,
 ) => {
   const settings: Discord = {
     color,
