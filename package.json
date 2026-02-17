@@ -13,8 +13,14 @@
     "build": "rm -rf dist && pnpm tsc",
     "test": "pnpm vitest --run",
     "logs": "pnpm tsc && node dist/src/run.js",
-    "prettier": "pnpm exec prettier -w '**/*.{js,jsx,ts,tsx,json,yml.j2,yml,yaml,.*}'",
-    "lint": "concurrently \"pnpm exec prettier --check '**/*.{js,jsx,ts,tsx,json,yml.j2,yml,yaml,.*}'\" \"pnpm exec eslint . --max-warnings=0\""
+    "lint": "pnpm npm-run-all lint:prettier lint:check lint:lint",
+    "lint:check": "pnpm biome check .",
+    "lint:lint": "pnpm biome lint .",
+    "lint:prettier": "pnpm biome format .",
+    "prettier": "pnpm npm-run-all prettier:format prettier:check prettier:lint",
+    "prettier:check": "pnpm biome check --write .",
+    "prettier:format": "pnpm biome format --write .",
+    "prettier:lint": "pnpm biome lint --write ."
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
@@ -34,15 +40,10 @@
     "got": "^14.6.6"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.2",
     "@types/node": "^25.2.3",
     "@types/ungap__structured-clone": "^1.2.0",
-    "@typescript-eslint/eslint-plugin": "^8.56.0",
-    "concurrently": "^9.2.1",
-    "eslint": "^10.0.0",
-    "eslint-plugin-ava": "^16.0.0",
-    "eslint-plugin-file-extension-in-import-ts": "^2.1.1",
-    "eslint-plugin-import": "^2.32.0",
-    "prettier": "^3.8.1",
+    "npm-run-all": "^4.1.5",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
