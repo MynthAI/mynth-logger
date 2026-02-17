@@ -36,7 +36,7 @@ const run = async () => {
   class MyObject {
     constructor(
       public a: string,
-      public b: number
+      public b: number,
     ) {}
   }
 
@@ -44,7 +44,7 @@ const run = async () => {
   console.log(new MyObject("without a prefix", 100));
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: ok
     throw (MyObject as any)("Error invoking", 1);
   } catch (error) {
     console.error(error);

@@ -1,7 +1,7 @@
-import { LogObject } from "consola";
-import { format } from "../format.js";
 import { type } from "arktype";
+import { LogObject } from "consola";
 import got from "got";
+import { format } from "../format.js";
 
 const Discord = type({
   discord: "true",
@@ -75,7 +75,7 @@ const getDiscord = (args: unknown[]): [Discord | NullDiscord, unknown[]] => {
 const sendToDiscord = async (
   description: string,
   options: Discord,
-  webhookUrl: string
+  webhookUrl: string,
 ) => {
   const data = {
     json: {

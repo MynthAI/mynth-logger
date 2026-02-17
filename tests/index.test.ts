@@ -1,19 +1,21 @@
-import test from "ava";
-import { setupLogging } from "mynth-logger";
+import { beforeAll, describe, expect, it } from "vitest";
+import { setupLogging } from "../src/index.js";
 
-test.before(() => {
+beforeAll(() => {
   setupLogging();
 });
 
-test.serial("logs display to terminal", (t) => {
-  console.debug("Hello ava");
-  t.pass();
-});
+describe("logging", () => {
+  it("logs display to terminal", () => {
+    console.debug("Hello vitest");
+    expect(true).toBe(true);
+  });
 
-test.serial("can log various objects", (t) => {
-  console.debug("Message", { message: true });
-  console.debug(undefined);
-  console.debug("bigint", 100n);
-  console.debug(false, true, "true", "false");
-  t.pass();
+  it("can log various objects", () => {
+    console.debug("Message", { message: true });
+    console.debug(undefined);
+    console.debug("bigint", 100n);
+    console.debug(false, true, "true", "false");
+    expect(true).toBe(true);
+  });
 });
