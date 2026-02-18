@@ -227,7 +227,19 @@ const createRedactor = (config: RedactConfig = {}) => {
 
 const createRedact = (config: RedactConfig) => {
   const redactor = createRedactor(config);
-  return (text: string) => redactor.redact(text) as string;
+
+  // DeepRedact applies only the first matching stringTest per pass.
+  // Run multiple passes until stable so different detectors can redact
+  // different tokens in the same string.
+  return (text: string) => {
+    let out = text;
+
+    while (true) {
+      const next = redactor.redact(out) as string;
+      if (next === out) return out;
+      out = next;
+    }
+  };
 };
 
 export { createRedact };
