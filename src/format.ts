@@ -1,6 +1,10 @@
 import { stringify } from "@ungap/structured-clone/json";
 import { type } from "arktype";
-import { redact } from "./redact.js";
+import { createRedact } from "./redact.js";
+
+const redact = createRedact({
+  hex: { enabled: true, allow: [{ re: /\b(intent|hash)\b/i }] },
+});
 
 const ErrorType = type({
   message: "string",
