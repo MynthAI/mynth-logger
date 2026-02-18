@@ -1,4 +1,4 @@
-import { ConsolaOptions, createConsola } from "consola";
+import { createConsola } from "consola";
 import { updateConfig } from "./format.js";
 import type { RedactConfig } from "./redact.js";
 import DatadogReporter from "./reporters/datadog.js";
@@ -6,7 +6,7 @@ import DiscordReporter from "./reporters/discord.js";
 
 const setupLogging = (config: RedactConfig = {}) => {
   updateConfig(config);
-  const consola = createConsola({ fancy: true, level: 5 } as Options);
+  const consola = createConsola({ fancy: true, level: 5 });
 
   if (process.env.NODE_ENV === "production")
     consola.setReporters([DatadogReporter]);
@@ -19,7 +19,5 @@ const setupLogging = (config: RedactConfig = {}) => {
   consola.wrapConsole();
   return consola;
 };
-
-type Options = ConsolaOptions & { fancy?: boolean };
 
 export { setupLogging };
