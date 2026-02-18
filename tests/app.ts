@@ -1,7 +1,9 @@
 import { setupLogging } from "../src/index.js";
 
 const run = async () => {
-  setupLogging();
+  setupLogging({
+    hex: { enabled: true, allow: [{ re: /\b(intent|hash)\b/i }] },
+  });
 
   console.log("Hello, this is a log");
   console.info("Hello, this is an info log");

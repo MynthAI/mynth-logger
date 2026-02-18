@@ -269,9 +269,10 @@ const createRedactor = (config: RedactConfig = {}) => {
   });
 };
 
-const createRedact = (config: RedactConfig = {}) => {
+const createRedact = (config: RedactConfig) => {
   const redactor = createRedactor(config);
   return (text: string) => redactor.redact(text) as string;
 };
 
 export { createRedact };
+export type { RedactConfig };
