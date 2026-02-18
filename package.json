@@ -1,6 +1,6 @@
 {
   "name": "mynth-logger",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Package to format logs for mynth microservices.",
   "main": "dist/src/index.js",
   "typings": "dist/src/index.d.ts",
