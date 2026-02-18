@@ -34,21 +34,13 @@ type DetectorConfig = {
 };
 
 type RedactConfig = {
-  replacement?: string;
-
   hex?: DetectorConfig;
   base64?: DetectorConfig;
   base58?: DetectorConfig;
   mnemonic?: DetectorConfig;
-
-  /**
-   * DeepRedact option; default false (matches your current behavior).
-   * (Keep false to avoid surprises.)
-   */
-  serialise?: boolean;
 };
 
-const DEFAULT_REPLACEMENT = "[REDACTED]";
+const replacement = "[REDACTED]";
 
 const sliceAround = (
   value: string,
@@ -138,7 +130,6 @@ const replaceBip39MnemonicMatchesWithContext = (
   });
 
 const createRedactor = (config: RedactConfig = {}) => {
-  const replacement = config.replacement ?? DEFAULT_REPLACEMENT;
   const HEX_MIN_LEN = 32;
   const BASE64_MIN_BLOCKS = 8;
   const BASE58_MIN_LEN = 32;
@@ -205,7 +196,7 @@ const createRedactor = (config: RedactConfig = {}) => {
   return new DeepRedact({
     stringTests,
     replacement,
-    serialise: config.serialise ?? false,
+    serialise: false,
   });
 };
 
