@@ -10,11 +10,10 @@ const setupLogging = (config: RedactConfig = {}) => {
 
   if (process.env.NODE_ENV === "production")
     consola.setReporters([DatadogReporter]);
-
   // Set Discord reporter as first so it can remove
   // Discord-related config before other reporters process the
   // log
-  consola.setReporters([DiscordReporter, ...consola.options.reporters]);
+  else consola.setReporters([DiscordReporter, ...consola.options.reporters]);
 
   consola.wrapConsole();
   return consola;
