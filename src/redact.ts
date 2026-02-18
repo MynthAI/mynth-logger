@@ -6,6 +6,7 @@ import { wordlist } from "@scure/bip39/wordlists/english.js";
  * Configurable redaction for strings that *look like secrets*:
  * - hex (optionally 0x-prefixed)
  * - base64 blobs
+ * - base64url blobs
  * - base58 blobs
  * - BIP39 mnemonics (validated)
  *
@@ -36,6 +37,7 @@ type DetectorConfig = {
 type RedactConfig = {
   hex?: DetectorConfig;
   base64?: DetectorConfig;
+  base64url?: DetectorConfig;
   base58?: DetectorConfig;
   mnemonic?: DetectorConfig;
 };
@@ -130,9 +132,10 @@ const replaceBip39MnemonicMatchesWithContext = (
   });
 
 const createRedactor = (config: RedactConfig = {}) => {
-  const HEX_MIN_LEN = 32;
-  const BASE64_MIN_BLOCKS = 8;
-  const BASE58_MIN_LEN = 32;
+  const HEX_MIN_LEN = 16;
+  const BASE64_MIN_BLOCKS = 4;
+  const BASE64URL_MIN_BLOCKS = 4;
+  const BASE58_MIN_LEN = 16;
 
   const HEX = new RegExp(
     String.raw`\b(?:0x)?[a-fA-F0-9]{${HEX_MIN_LEN},}\b`,
@@ -141,10 +144,16 @@ const createRedactor = (config: RedactConfig = {}) => {
   const hexAllow: ContextRule[] = config.hex?.allow ?? [];
 
   const BASE64 = new RegExp(
-    String.raw`\b(?:[A-Za-z0-9+/]{4}){${BASE64_MIN_BLOCKS},}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\b`,
+    String.raw`\b(?:[A-Za-z0-9+/]{4}){${BASE64_MIN_BLOCKS},}(?:[A-Za-z0-9+/]{2,3})?(?:={0,2})\b`,
     "g",
   );
   const base64Allow = config.base64?.allow ?? [];
+
+  const BASE64URL = new RegExp(
+    String.raw`\b(?:[A-Za-z0-9\-_]{4}){${BASE64URL_MIN_BLOCKS},}(?:[A-Za-z0-9\-_]{2,3})?(?:={0,2})\b`,
+    "g",
+  );
+  const base64urlAllow = config.base64url?.allow ?? [];
 
   const BASE58 = new RegExp(
     String.raw`\b[1-9A-HJ-NP-Za-km-z]{${BASE58_MIN_LEN},}\b`,
@@ -170,6 +179,11 @@ const createRedactor = (config: RedactConfig = {}) => {
       pattern: BASE64,
       replacer: (v, p) =>
         replaceAllMatchesWithContext(v, p, replacement, base64Allow),
+    },
+    {
+      pattern: BASE64URL,
+      replacer: (v, p) =>
+        replaceAllMatchesWithContext(v, p, replacement, base64urlAllow),
     },
     {
       pattern: BASE58,
