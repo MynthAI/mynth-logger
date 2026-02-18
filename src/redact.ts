@@ -106,6 +106,19 @@ const shouldAllowByRules = (
   return false;
 };
 
+type ReplaceMeta = {
+  offset: number;
+  whole: string;
+};
+
+const getReplaceMeta = (args: unknown[]): ReplaceMeta | null => {
+  const offset = args.at(-2);
+  const whole = args.at(-1);
+  if (typeof offset !== "number") return null;
+  if (typeof whole !== "string") return null;
+  return { offset, whole };
+};
+
 /**
  * Generic contextual replacer:
  * - Redacts every match unless an allow-rule matches nearby context.
@@ -116,13 +129,15 @@ const replaceAllMatchesWithContext = (
   replacement: string,
   allow?: ContextRule[],
 ) => {
-  return value.replace(pattern, (match, ...args: any[]) => {
-    const offset = args[args.length - 2] as number; // replace() callback signature
-    const whole = args[args.length - 1] as string;
+  return value.replace(pattern, (...args: unknown[]) => {
+    // args shape is: [match, ...groups?, offset, whole]
+    const match = args[0];
+    if (typeof match !== "string") return replacement;
 
-    // If allow rules match context, keep original match
-    if (shouldAllowByRules(whole, match, offset, allow)) return match;
+    const meta = getReplaceMeta(args);
+    if (!meta) return replacement;
 
+    if (shouldAllowByRules(meta.whole, match, meta.offset, allow)) return match;
     return replacement;
   });
 };
@@ -138,21 +153,25 @@ const replaceBip39MnemonicMatchesWithContext = (
   replacement: string,
   allow?: ContextRule[],
 ) => {
-  return value.replace(
-    pattern,
-    (match: string, phrase: string, ...rest: any[]) => {
-      const offset = rest[rest.length - 2] as number;
-      const whole = rest[rest.length - 1] as string;
+  return value.replace(pattern, (...args: unknown[]) => {
+    // Expected: [match, phrase, offset, whole] (plus any extra captures if regex changes later)
+    const match = args[0];
+    const phrase = args[1];
 
-      if (shouldAllowByRules(whole, match, offset, allow)) return match;
+    if (typeof match !== "string") return replacement;
+    if (typeof phrase !== "string") return match;
 
-      const normalized = phrase.trim().toLowerCase().replace(/\s+/g, " ");
-      if (!validateMnemonic(normalized, wordlist)) return match;
+    const meta = getReplaceMeta(args);
+    if (!meta) return match;
 
-      // Replace only the phrase portion (preserves surrounding quotes/keywords if any)
-      return match.replace(phrase, replacement);
-    },
-  );
+    if (shouldAllowByRules(meta.whole, match, meta.offset, allow)) return match;
+
+    const normalized = phrase.trim().toLowerCase().replace(/\s+/g, " ");
+    if (!validateMnemonic(normalized, wordlist)) return match;
+
+    // Replace only the phrase portion (preserves surrounding quotes/keywords if any)
+    return match.replace(phrase, replacement);
+  });
 };
 
 const escapeForRegexLiteral = (s: string) =>
