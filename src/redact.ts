@@ -17,7 +17,7 @@ import { wordlist } from "@scure/bip39/wordlists/english.js";
 type ContextRule = {
   /**
    * Test this regex against a slice of the input around the match.
-   * If it matches, the secret is NOT redacted.
+   * If it matches, the match is NOT redacted.
    */
   re: RegExp;
   /** How many chars to include before the match when building the slice. */
@@ -30,7 +30,6 @@ type DetectorConfig = {
   enabled?: boolean;
   /**
    * Any rule match => do not redact that specific match.
-   * Useful for things like "hash: <sha256>" or "intent <hex>".
    */
   allow?: ContextRule[];
 };
@@ -93,18 +92,13 @@ const getReplaceMeta = (args: unknown[]): ReplaceMeta | null => {
   return { offset, whole };
 };
 
-/**
- * Generic contextual replacer:
- * - Redacts every match unless an allow-rule matches nearby context.
- */
 const replaceAllMatchesWithContext = (
   value: string,
   pattern: RegExp,
   replacement: string,
   allow?: ContextRule[],
-) => {
-  return value.replace(pattern, (...args: unknown[]) => {
-    // args shape is: [match, ...groups?, offset, whole]
+) =>
+  value.replace(pattern, (...args: unknown[]) => {
     const match = args[0];
     if (typeof match !== "string") return replacement;
 
@@ -114,7 +108,6 @@ const replaceAllMatchesWithContext = (
     if (shouldAllowByRules(meta.whole, match, meta.offset, allow)) return match;
     return replacement;
   });
-};
 
 /**
  * BIP39 contextual replacer:
@@ -126,9 +119,8 @@ const replaceBip39MnemonicMatchesWithContext = (
   pattern: RegExp,
   replacement: string,
   allow?: ContextRule[],
-) => {
-  return value.replace(pattern, (...args: unknown[]) => {
-    // Expected: [match, phrase, offset, whole] (plus any extra captures if regex changes later)
+) =>
+  value.replace(pattern, (...args: unknown[]) => {
     const match = args[0];
     const phrase = args[1];
 
@@ -143,10 +135,8 @@ const replaceBip39MnemonicMatchesWithContext = (
     const normalized = phrase.trim().toLowerCase().replace(/\s+/g, " ");
     if (!validateMnemonic(normalized, wordlist)) return match;
 
-    // Replace only the phrase portion (preserves surrounding quotes/keywords if any)
     return match.replace(phrase, replacement);
   });
-};
 
 const createRedactor = (config: RedactConfig = {}) => {
   const replacement = config.replacement ?? DEFAULT_REPLACEMENT;
@@ -214,8 +204,7 @@ const createRedactor = (config: RedactConfig = {}) => {
         replaceAllMatchesWithContext(v, p, replacement, base58Allow),
     });
 
-  if (mnemonicEnabled) {
-    // bare only
+  if (mnemonicEnabled)
     stringTests.push({
       pattern: MNEMONIC_BARE,
       replacer: (v, p) =>
@@ -226,7 +215,6 @@ const createRedactor = (config: RedactConfig = {}) => {
           mnemonicAllow,
         ),
     });
-  }
 
   return new DeepRedact({
     stringTests,
