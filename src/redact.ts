@@ -44,6 +44,11 @@ type RedactConfig = {
 
 const replacement = "[REDACTED]";
 
+const cloneRegex = (re: RegExp): RegExp => {
+  const flags = re.flags.includes("g") ? re.flags : `${re.flags}g`;
+  return new RegExp(re.source, flags);
+};
+
 const sliceAround = (
   value: string,
   offset: number,
@@ -67,6 +72,11 @@ const shouldAllowByRules = (
   if (!rules?.length) return false;
   for (const rule of rules) {
     const chunk = sliceAround(value, offset, match.length, rule);
+
+    // If a consumer provides a /g or /y regex, .test() mutates lastIndex.
+    // Reset to ensure consistent behavior.
+    rule.re.lastIndex = 0;
+
     if (rule.re.test(chunk)) return true;
   }
   return false;
@@ -90,8 +100,9 @@ const replaceAllMatchesWithContext = (
   pattern: RegExp,
   replacement: string,
   allow?: ContextRule[],
-) =>
-  value.replace(pattern, (...args: unknown[]) => {
+) => {
+  const re = cloneRegex(pattern);
+  return value.replace(re, (...args: unknown[]) => {
     const match = args[0];
     if (typeof match !== "string") return replacement;
 
@@ -101,6 +112,7 @@ const replaceAllMatchesWithContext = (
     if (shouldAllowByRules(meta.whole, match, meta.offset, allow)) return match;
     return replacement;
   });
+};
 
 /**
  * BIP39 contextual replacer:
@@ -112,8 +124,9 @@ const replaceBip39MnemonicMatchesWithContext = (
   pattern: RegExp,
   replacement: string,
   allow?: ContextRule[],
-) =>
-  value.replace(pattern, (...args: unknown[]) => {
+) => {
+  const re = cloneRegex(pattern);
+  return value.replace(re, (...args: unknown[]) => {
     const match = args[0];
     const phrase = args[1];
 
@@ -130,6 +143,7 @@ const replaceBip39MnemonicMatchesWithContext = (
 
     return match.replace(phrase, replacement);
   });
+};
 
 const createRedactor = (config: RedactConfig = {}) => {
   const HEX_MIN_LEN = 16;
