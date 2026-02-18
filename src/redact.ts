@@ -134,21 +134,18 @@ const createRedactor = (config: RedactConfig = {}) => {
   const BASE64_MIN_BLOCKS = 8;
   const BASE58_MIN_LEN = 32;
 
-  // 1) HEX
   const HEX = new RegExp(
     String.raw`\b(?:0x)?[a-fA-F0-9]{${HEX_MIN_LEN},}\b`,
     "g",
   );
   const hexAllow: ContextRule[] = config.hex?.allow ?? [];
 
-  // 2) BASE64
   const BASE64 = new RegExp(
     String.raw`\b(?:[A-Za-z0-9+/]{4}){${BASE64_MIN_BLOCKS},}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\b`,
     "g",
   );
   const base64Allow = config.base64?.allow ?? [];
 
-  // 3) BASE58
   const BASE58 = new RegExp(
     String.raw`\b[1-9A-HJ-NP-Za-km-z]{${BASE58_MIN_LEN},}\b`,
     "g",
@@ -157,9 +154,7 @@ const createRedactor = (config: RedactConfig = {}) => {
 
   const WORD = "[a-zA-Z]{2,8}";
   const PHRASE_12_TO_24 = `(?:${WORD}\\s+){11,23}${WORD}`;
-
-  const MNEMONIC_BARE = new RegExp(String.raw`\b(${PHRASE_12_TO_24})\b`, "gi");
-
+  const MNEMONIC = new RegExp(String.raw`\b(${PHRASE_12_TO_24})\b`, "gi");
   const mnemonicAllow = config.mnemonic?.allow ?? [];
 
   const stringTests: Array<{
@@ -182,7 +177,7 @@ const createRedactor = (config: RedactConfig = {}) => {
         replaceAllMatchesWithContext(v, p, replacement, base58Allow),
     },
     {
-      pattern: MNEMONIC_BARE,
+      pattern: MNEMONIC,
       replacer: (v, p) =>
         replaceBip39MnemonicMatchesWithContext(
           v,
