@@ -6,6 +6,7 @@ import { wordlist } from "@scure/bip39/wordlists/english.js";
  * Configurable redaction for strings that *look like secrets*:
  * - hex (optionally 0x-prefixed)
  * - base64 blobs
+ * - base64url blobs
  * - base58 blobs
  * - BIP39 mnemonics (validated)
  *
@@ -36,11 +37,17 @@ type DetectorConfig = {
 type RedactConfig = {
   hex?: DetectorConfig;
   base64?: DetectorConfig;
+  base64url?: DetectorConfig;
   base58?: DetectorConfig;
   mnemonic?: DetectorConfig;
 };
 
 const replacement = "[REDACTED]";
+
+const cloneRegex = (re: RegExp): RegExp => {
+  const flags = re.flags.includes("g") ? re.flags : `${re.flags}g`;
+  return new RegExp(re.source, flags);
+};
 
 const sliceAround = (
   value: string,
@@ -65,6 +72,11 @@ const shouldAllowByRules = (
   if (!rules?.length) return false;
   for (const rule of rules) {
     const chunk = sliceAround(value, offset, match.length, rule);
+
+    // If a consumer provides a /g or /y regex, .test() mutates lastIndex.
+    // Reset to ensure consistent behavior.
+    rule.re.lastIndex = 0;
+
     if (rule.re.test(chunk)) return true;
   }
   return false;
@@ -88,8 +100,9 @@ const replaceAllMatchesWithContext = (
   pattern: RegExp,
   replacement: string,
   allow?: ContextRule[],
-) =>
-  value.replace(pattern, (...args: unknown[]) => {
+) => {
+  const re = cloneRegex(pattern);
+  return value.replace(re, (...args: unknown[]) => {
     const match = args[0];
     if (typeof match !== "string") return replacement;
 
@@ -99,6 +112,7 @@ const replaceAllMatchesWithContext = (
     if (shouldAllowByRules(meta.whole, match, meta.offset, allow)) return match;
     return replacement;
   });
+};
 
 /**
  * BIP39 contextual replacer:
@@ -110,8 +124,9 @@ const replaceBip39MnemonicMatchesWithContext = (
   pattern: RegExp,
   replacement: string,
   allow?: ContextRule[],
-) =>
-  value.replace(pattern, (...args: unknown[]) => {
+) => {
+  const re = cloneRegex(pattern);
+  return value.replace(re, (...args: unknown[]) => {
     const match = args[0];
     const phrase = args[1];
 
@@ -128,33 +143,43 @@ const replaceBip39MnemonicMatchesWithContext = (
 
     return match.replace(phrase, replacement);
   });
+};
 
 const createRedactor = (config: RedactConfig = {}) => {
-  const HEX_MIN_LEN = 32;
-  const BASE64_MIN_BLOCKS = 8;
-  const BASE58_MIN_LEN = 32;
+  const HEX_MIN_LEN = 16;
+  const BASE64_MIN_BLOCKS = 4;
+  const BASE58_MIN_LEN = 16;
 
   const HEX = new RegExp(
-    String.raw`\b(?:0x)?[a-fA-F0-9]{${HEX_MIN_LEN},}\b`,
+    String.raw`(?<![a-fA-F0-9])(?:0x)?[a-fA-F0-9]{${HEX_MIN_LEN},}(?![a-fA-F0-9])`,
     "g",
   );
   const hexAllow: ContextRule[] = config.hex?.allow ?? [];
 
   const BASE64 = new RegExp(
-    String.raw`\b(?:[A-Za-z0-9+/]{4}){${BASE64_MIN_BLOCKS},}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\b`,
+    String.raw`(?<![A-Za-z0-9+/=])(?:[A-Za-z0-9+/]{4}){${BASE64_MIN_BLOCKS},}(?:[A-Za-z0-9+/]{2,3})?(?:={0,2})(?![A-Za-z0-9+/=])`,
     "g",
   );
   const base64Allow = config.base64?.allow ?? [];
 
+  const BASE64URL = new RegExp(
+    String.raw`(?<![A-Za-z0-9\-_])[A-Za-z0-9\-_]{16,}(?:={0,2})?(?![A-Za-z0-9\-_])`,
+    "g",
+  );
+  const base64urlAllow = config.base64url?.allow ?? [];
+
   const BASE58 = new RegExp(
-    String.raw`\b[1-9A-HJ-NP-Za-km-z]{${BASE58_MIN_LEN},}\b`,
+    String.raw`(?<![1-9A-HJ-NP-Za-km-z])[1-9A-HJ-NP-Za-km-z]{${BASE58_MIN_LEN},}(?![1-9A-HJ-NP-Za-km-z])`,
     "g",
   );
   const base58Allow = config.base58?.allow ?? [];
 
   const WORD = "[a-zA-Z]{2,8}";
   const PHRASE_12_TO_24 = `(?:${WORD}\\s+){11,23}${WORD}`;
-  const MNEMONIC = new RegExp(String.raw`\b(${PHRASE_12_TO_24})\b`, "gi");
+  const MNEMONIC = new RegExp(
+    String.raw`(?<![A-Za-z])(${PHRASE_12_TO_24})(?![A-Za-z])`,
+    "gi",
+  );
   const mnemonicAllow = config.mnemonic?.allow ?? [];
 
   const stringTests: Array<{
@@ -165,6 +190,11 @@ const createRedactor = (config: RedactConfig = {}) => {
       pattern: HEX,
       replacer: (v, p) =>
         replaceAllMatchesWithContext(v, p, replacement, hexAllow),
+    },
+    {
+      pattern: BASE64URL,
+      replacer: (v, p) =>
+        replaceAllMatchesWithContext(v, p, replacement, base64urlAllow),
     },
     {
       pattern: BASE64,
@@ -197,7 +227,19 @@ const createRedactor = (config: RedactConfig = {}) => {
 
 const createRedact = (config: RedactConfig) => {
   const redactor = createRedactor(config);
-  return (text: string) => redactor.redact(text) as string;
+
+  // DeepRedact applies only the first matching stringTest per pass.
+  // Run multiple passes until stable so different detectors can redact
+  // different tokens in the same string.
+  return (text: string) => {
+    let out = text;
+
+    while (true) {
+      const next = redactor.redact(out) as string;
+      if (next === out) return out;
+      out = next;
+    }
+  };
 };
 
 export { createRedact };
