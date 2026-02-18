@@ -178,21 +178,11 @@ const createRedactor = (config: RedactConfig = {}) => {
   );
   const base58Allow = config.base58?.allow ?? [];
 
-  // 4) MNEMONIC seed phrases (all variants enabled by default now)
+  // 4) MNEMONIC seed phrases (bare variant only)
   const mnemonicEnabled = config.mnemonic?.enabled ?? true;
 
   const WORD = "[a-zA-Z]{2,8}";
   const PHRASE_12_TO_24 = `(?:${WORD}\\s+){11,23}${WORD}`;
-
-  const MNEMONIC_WITH_KEYWORD = new RegExp(
-    String.raw`\b(?:mnemonic|seed|recovery\s+phrase|secret\s+phrase)\b[\s:=-]{0,40}(${PHRASE_12_TO_24})\b`,
-    "gi",
-  );
-
-  const MNEMONIC_QUOTED = new RegExp(
-    String.raw`(?:["'(\[])\s*(${PHRASE_12_TO_24})\s*(?:["')\]])`,
-    "gi",
-  );
 
   const MNEMONIC_BARE = new RegExp(String.raw`\b(${PHRASE_12_TO_24})\b`, "gi");
 
@@ -225,31 +215,7 @@ const createRedactor = (config: RedactConfig = {}) => {
     });
 
   if (mnemonicEnabled) {
-    // with keyword
-    stringTests.push({
-      pattern: MNEMONIC_WITH_KEYWORD,
-      replacer: (v, p) =>
-        replaceBip39MnemonicMatchesWithContext(
-          v,
-          p,
-          replacement,
-          mnemonicAllow,
-        ),
-    });
-
-    // quoted
-    stringTests.push({
-      pattern: MNEMONIC_QUOTED,
-      replacer: (v, p) =>
-        replaceBip39MnemonicMatchesWithContext(
-          v,
-          p,
-          replacement,
-          mnemonicAllow,
-        ),
-    });
-
-    // bare
+    // bare only
     stringTests.push({
       pattern: MNEMONIC_BARE,
       replacer: (v, p) =>
