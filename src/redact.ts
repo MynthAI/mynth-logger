@@ -192,14 +192,14 @@ const createRedactor = (config: RedactConfig = {}) => {
         replaceAllMatchesWithContext(v, p, replacement, hexAllow),
     },
     {
-      pattern: BASE64,
-      replacer: (v, p) =>
-        replaceAllMatchesWithContext(v, p, replacement, base64Allow),
-    },
-    {
       pattern: BASE64URL,
       replacer: (v, p) =>
         replaceAllMatchesWithContext(v, p, replacement, base64urlAllow),
+    },
+    {
+      pattern: BASE64,
+      replacer: (v, p) =>
+        replaceAllMatchesWithContext(v, p, replacement, base64Allow),
     },
     {
       pattern: BASE58,
