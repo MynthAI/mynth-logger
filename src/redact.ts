@@ -38,36 +38,10 @@ type DetectorConfig = {
 type RedactConfig = {
   replacement?: string;
 
-  hex?: DetectorConfig & {
-    /** Minimum number of hex chars (excluding optional 0x). Default 32. */
-    minLen?: number;
-    /** Allow-list keywords for the common “keyword: <hex>” case. */
-    allowKeywords?: string[]; // e.g. ["intent", "hash"]
-    /**
-     * How far back from the match to look for an allowKeyword.
-     * (handles "hash:", "hash = ", etc.)
-     */
-    keywordWindow?: number; // default 40
-  };
-
-  base64?: DetectorConfig & {
-    /** Minimum number of 4-char blocks. Default 8 (same as your current regex). */
-    minBlocks?: number;
-  };
-
-  base58?: DetectorConfig & {
-    /** Minimum number of chars. Default 32. */
-    minLen?: number;
-  };
-
-  mnemonic?: DetectorConfig & {
-    /** Enable/disable bare mnemonics (no keyword, no quotes). Default true. */
-    bare?: boolean;
-    /** Enable/disable keyword-triggered mnemonics. Default true. */
-    withKeyword?: boolean;
-    /** Enable/disable quoted/bracketed mnemonics. Default true. */
-    quoted?: boolean;
-  };
+  hex?: DetectorConfig;
+  base64?: DetectorConfig;
+  base58?: DetectorConfig;
+  mnemonic?: DetectorConfig;
 
   /**
    * DeepRedact option; default false (matches your current behavior).
@@ -174,74 +148,38 @@ const replaceBip39MnemonicMatchesWithContext = (
   });
 };
 
-const escapeForRegexLiteral = (s: string) =>
-  s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-/**
- * Build a context rule that allows a match when a keyword appears shortly before it,
- * like: "hash: <hex>" or "intent = <hex>".
- */
-const keywordAllowRules = (
-  keywords: string[],
-  window: number,
-): ContextRule[] => {
-  if (!keywords.length) return [];
-  const kw = keywords.map(escapeForRegexLiteral).join("|");
-  // keyword, then optional separators/spaces up to the window end.
-  // We only examine the chunk BEFORE the match by slicing.
-  return [
-    {
-      re: new RegExp(String.raw`\b(?:${kw})\b[\s:=-]{0,40}$`, "i"),
-      before: window,
-      after: 0,
-    },
-  ];
-};
-
 const createRedactor = (config: RedactConfig = {}) => {
   const replacement = config.replacement ?? DEFAULT_REPLACEMENT;
-
-  // ---- Patterns (built from config) ----
+  const HEX_MIN_LEN = 32;
+  const BASE64_MIN_BLOCKS = 8;
+  const BASE58_MIN_LEN = 32;
 
   // 1) HEX
   const hexEnabled = config.hex?.enabled ?? true;
-  const hexMinLen = config.hex?.minLen ?? 32;
-  const hexAllowKeywords = config.hex?.allowKeywords ?? ["intent", "hash"];
-  const hexKeywordWindow = config.hex?.keywordWindow ?? 40;
-
   const HEX = new RegExp(
-    String.raw`\b(?:0x)?[a-fA-F0-9]{${hexMinLen},}\b`,
+    String.raw`\b(?:0x)?[a-fA-F0-9]{${HEX_MIN_LEN},}\b`,
     "g",
   );
-  const hexAllow: ContextRule[] = [
-    ...keywordAllowRules(hexAllowKeywords, hexKeywordWindow),
-    ...(config.hex?.allow ?? []),
-  ];
+  const hexAllow: ContextRule[] = config.hex?.allow ?? [];
 
   // 2) BASE64
   const base64Enabled = config.base64?.enabled ?? true;
-  const base64MinBlocks = config.base64?.minBlocks ?? 8;
-  // same shape as your original, but min blocks configurable
   const BASE64 = new RegExp(
-    String.raw`\b(?:[A-Za-z0-9+/]{4}){${base64MinBlocks},}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\b`,
+    String.raw`\b(?:[A-Za-z0-9+/]{4}){${BASE64_MIN_BLOCKS},}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\b`,
     "g",
   );
   const base64Allow = config.base64?.allow ?? [];
 
   // 3) BASE58
   const base58Enabled = config.base58?.enabled ?? true;
-  const base58MinLen = config.base58?.minLen ?? 32;
   const BASE58 = new RegExp(
-    String.raw`\b[1-9A-HJ-NP-Za-km-z]{${base58MinLen},}\b`,
+    String.raw`\b[1-9A-HJ-NP-Za-km-z]{${BASE58_MIN_LEN},}\b`,
     "g",
   );
   const base58Allow = config.base58?.allow ?? [];
 
-  // 4) MNEMONIC seed phrases
+  // 4) MNEMONIC seed phrases (all variants enabled by default now)
   const mnemonicEnabled = config.mnemonic?.enabled ?? true;
-  const mnemonicBare = config.mnemonic?.bare ?? true;
-  const mnemonicWithKeyword = config.mnemonic?.withKeyword ?? true;
-  const mnemonicQuoted = config.mnemonic?.quoted ?? true;
 
   const WORD = "[a-zA-Z]{2,8}";
   const PHRASE_12_TO_24 = `(?:${WORD}\\s+){11,23}${WORD}`;
@@ -287,41 +225,41 @@ const createRedactor = (config: RedactConfig = {}) => {
     });
 
   if (mnemonicEnabled) {
-    if (mnemonicWithKeyword)
-      stringTests.push({
-        pattern: MNEMONIC_WITH_KEYWORD,
-        replacer: (v, p) =>
-          replaceBip39MnemonicMatchesWithContext(
-            v,
-            p,
-            replacement,
-            mnemonicAllow,
-          ),
-      });
+    // with keyword
+    stringTests.push({
+      pattern: MNEMONIC_WITH_KEYWORD,
+      replacer: (v, p) =>
+        replaceBip39MnemonicMatchesWithContext(
+          v,
+          p,
+          replacement,
+          mnemonicAllow,
+        ),
+    });
 
-    if (mnemonicQuoted)
-      stringTests.push({
-        pattern: MNEMONIC_QUOTED,
-        replacer: (v, p) =>
-          replaceBip39MnemonicMatchesWithContext(
-            v,
-            p,
-            replacement,
-            mnemonicAllow,
-          ),
-      });
+    // quoted
+    stringTests.push({
+      pattern: MNEMONIC_QUOTED,
+      replacer: (v, p) =>
+        replaceBip39MnemonicMatchesWithContext(
+          v,
+          p,
+          replacement,
+          mnemonicAllow,
+        ),
+    });
 
-    if (mnemonicBare)
-      stringTests.push({
-        pattern: MNEMONIC_BARE,
-        replacer: (v, p) =>
-          replaceBip39MnemonicMatchesWithContext(
-            v,
-            p,
-            replacement,
-            mnemonicAllow,
-          ),
-      });
+    // bare
+    stringTests.push({
+      pattern: MNEMONIC_BARE,
+      replacer: (v, p) =>
+        replaceBip39MnemonicMatchesWithContext(
+          v,
+          p,
+          replacement,
+          mnemonicAllow,
+        ),
+    });
   }
 
   return new DeepRedact({
