@@ -21,7 +21,7 @@ type ContextRule = {
    */
   re: RegExp;
   /** How many chars to include before the match when building the slice. */
-  before?: number; // default 0
+  before?: number; // default 10
   /** How many chars to include after the match when building the slice. */
   after?: number; // default 0
 };
