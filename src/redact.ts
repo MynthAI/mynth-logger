@@ -32,7 +32,7 @@ const replaceBip39MnemonicMatches = (value: string, pattern: RegExp) =>
 // 1) Hex secrets (API keys, hashes, tokens)
 //    - 32+ hex chars (optionally 0x)
 //    - word boundaries help avoid eating normal words
-const HEX = /\b(?:0x)?[a-fA-F0-9]{32,}\b/g;
+const HEX = /(?<!\bintent\s)(?<!\bhash\s)\b(?:0x)?[a-fA-F0-9]{32,}\b/g;
 
 // 2) Base64 blobs (JWT parts, keys, encoded payloads)
 //    - requires a decent minimum length to reduce false positives

@@ -14,6 +14,9 @@ const run = async () => {
   console.log(
     "This is my private key: 4fa7614bdd07ab15b11d2365466536ba160c06050ade0888a3aa985a5522ab22",
   );
+  console.log(
+    "This is log for intent c8adcfef7255ad2c117f68111500997ab66de3c923e9ea9e71aaed5829d0acb8 and private key c99960eaeecb17d77d7c88f440383ccbaf93237471236a739185c0ebd62c5741",
+  );
 
   try {
     throw new Error("An Error was thrown");
