@@ -9,4 +9,14 @@ describe("redact", () => {
     );
     expect(result).toBe("Should base64url-ish [REDACTED] data");
   });
+
+  it("redacts hex and base64url in same string", () => {
+    const redact = createRedact({});
+    const result = redact(
+      "Should redact private key (b49bd63e67e2cd11aba17befead483934939df828cb833a846c58661726d3b00) and API key (djOqmjzVb0GAGdqS0p0NtiEwvb6u1lx509JEkpDJLgnvMhmOMtBc9vqolpktd1OK7Xas)",
+    );
+    expect(result).toBe(
+      "Should redact private key ([REDACTED]) and API key ([REDACTED])",
+    );
+  });
 });
