@@ -2,88 +2,203 @@ import { DeepRedact } from "@hackylabs/deep-redact/index.ts";
 import { validateMnemonic } from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english.js";
 
-const replacement = "[REDACTED]";
-
 /**
- * Create a redactor that censors things that *look like secrets* inside
- * strings:
- * - long hex (optionally 0x-prefixed)
- * - long base64 blobs
- * - long base58 blobs
- * - mnemonic seed phrases (validated via BIP39 english wordlist)
+ * Configurable redaction for strings that *look like secrets*:
+ * - hex (optionally 0x-prefixed)
+ * - base64 blobs
+ * - base58 blobs
+ * - BIP39 mnemonics (validated)
+ *
+ * Key idea:
+ * Each detector can be given "allow" context rules that prevent redaction when
+ * extra surrounding context indicates the value is safe/expected.
  */
 
-// Generic replacer: redact ALL matches within the string.
-const replaceAllMatches = (value: string, pattern: RegExp) =>
-  value.replace(pattern, replacement);
+type ContextRule = {
+  /**
+   * Test this regex against a slice of the input around the match.
+   * If it matches, the match is NOT redacted.
+   */
+  re: RegExp;
+  /** How many chars to include before the match when building the slice. */
+  before?: number; // default 10
+  /** How many chars to include after the match when building the slice. */
+  after?: number; // default 0
+};
 
-// Mnemonic replacer: only redact if the captured phrase is a valid BIP39 mnemonic.
-const replaceBip39MnemonicMatches = (value: string, pattern: RegExp) =>
-  value.replace(pattern, (match: string, phrase: string) => {
-    // Normalize spacing; validateMnemonic expects words separated by single spaces
+type DetectorConfig = {
+  /**
+   * Any rule match => do not redact that specific match.
+   */
+  allow?: ContextRule[];
+};
+
+type RedactConfig = {
+  hex?: DetectorConfig;
+  base64?: DetectorConfig;
+  base58?: DetectorConfig;
+  mnemonic?: DetectorConfig;
+};
+
+const replacement = "[REDACTED]";
+
+const sliceAround = (
+  value: string,
+  offset: number,
+  matchLen: number,
+  rule: ContextRule,
+) => {
+  const before = rule.before ?? 10;
+  const after = rule.after ?? 0;
+
+  const start = Math.max(0, offset - before);
+  const end = Math.min(value.length, offset + matchLen + after);
+  return value.slice(start, end);
+};
+
+const shouldAllowByRules = (
+  value: string,
+  match: string,
+  offset: number,
+  rules?: ContextRule[],
+): boolean => {
+  if (!rules?.length) return false;
+  for (const rule of rules) {
+    const chunk = sliceAround(value, offset, match.length, rule);
+    if (rule.re.test(chunk)) return true;
+  }
+  return false;
+};
+
+type ReplaceMeta = {
+  offset: number;
+  whole: string;
+};
+
+const getReplaceMeta = (args: unknown[]): ReplaceMeta | null => {
+  const offset = args.at(-2);
+  const whole = args.at(-1);
+  if (typeof offset !== "number") return null;
+  if (typeof whole !== "string") return null;
+  return { offset, whole };
+};
+
+const replaceAllMatchesWithContext = (
+  value: string,
+  pattern: RegExp,
+  replacement: string,
+  allow?: ContextRule[],
+) =>
+  value.replace(pattern, (...args: unknown[]) => {
+    const match = args[0];
+    if (typeof match !== "string") return replacement;
+
+    const meta = getReplaceMeta(args);
+    if (!meta) return replacement;
+
+    if (shouldAllowByRules(meta.whole, match, meta.offset, allow)) return match;
+    return replacement;
+  });
+
+/**
+ * BIP39 contextual replacer:
+ * - Only redacts if the captured phrase validates as a BIP39 mnemonic
+ * - Still supports allow-rules (to suppress redaction in “safe” contexts)
+ */
+const replaceBip39MnemonicMatchesWithContext = (
+  value: string,
+  pattern: RegExp,
+  replacement: string,
+  allow?: ContextRule[],
+) =>
+  value.replace(pattern, (...args: unknown[]) => {
+    const match = args[0];
+    const phrase = args[1];
+
+    if (typeof match !== "string") return replacement;
+    if (typeof phrase !== "string") return match;
+
+    const meta = getReplaceMeta(args);
+    if (!meta) return match;
+
+    if (shouldAllowByRules(meta.whole, match, meta.offset, allow)) return match;
+
     const normalized = phrase.trim().toLowerCase().replace(/\s+/g, " ");
     if (!validateMnemonic(normalized, wordlist)) return match;
 
-    // Replace only the phrase portion (preserves surrounding quotes/keywords if any)
     return match.replace(phrase, replacement);
   });
 
-// --- Patterns ---
-// 1) Hex secrets (API keys, hashes, tokens)
-//    - 32+ hex chars (optionally 0x)
-//    - word boundaries help avoid eating normal words
-const HEX = /\b(?:0x)?[a-fA-F0-9]{32,}\b/g;
+const createRedactor = (config: RedactConfig = {}) => {
+  const HEX_MIN_LEN = 32;
+  const BASE64_MIN_BLOCKS = 8;
+  const BASE58_MIN_LEN = 32;
 
-// 2) Base64 blobs (JWT parts, keys, encoded payloads)
-//    - requires a decent minimum length to reduce false positives
-//    - supports optional padding
-const BASE64 =
-  /\b(?:[A-Za-z0-9+/]{4}){8,}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\b/g;
+  const HEX = new RegExp(
+    String.raw`\b(?:0x)?[a-fA-F0-9]{${HEX_MIN_LEN},}\b`,
+    "g",
+  );
+  const hexAllow: ContextRule[] = config.hex?.allow ?? [];
 
-// 3) Base58 blobs (common in crypto keys/ids)
-//    - base58 alphabet excludes 0, O, I, l
-//    - require 32+ chars to reduce false positives
-const BASE58 = /\b[1-9A-HJ-NP-Za-km-z]{32,}\b/g;
+  const BASE64 = new RegExp(
+    String.raw`\b(?:[A-Za-z0-9+/]{4}){${BASE64_MIN_BLOCKS},}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\b`,
+    "g",
+  );
+  const base64Allow = config.base64?.allow ?? [];
 
-// 4) Mnemonic seed phrases
-//    We validate candidates with @scure/bip39 to avoid false positives.
-//    - 12 to 24 words separated by whitespace
-const WORD = "[a-zA-Z]{2,8}";
-const PHRASE_12_TO_24 = `(?:${WORD}\\s+){11,23}${WORD}`;
+  const BASE58 = new RegExp(
+    String.raw`\b[1-9A-HJ-NP-Za-km-z]{${BASE58_MIN_LEN},}\b`,
+    "g",
+  );
+  const base58Allow = config.base58?.allow ?? [];
 
-const MNEMONIC_WITH_KEYWORD = new RegExp(
-  // keyword then up to ~40 chars (like ":" or whitespace) then the phrase
-  String.raw`\b(?:mnemonic|seed|recovery\s+phrase|secret\s+phrase)\b[\s:=-]{0,40}(${PHRASE_12_TO_24})\b`,
-  "gi",
-);
+  const WORD = "[a-zA-Z]{2,8}";
+  const PHRASE_12_TO_24 = `(?:${WORD}\\s+){11,23}${WORD}`;
+  const MNEMONIC = new RegExp(String.raw`\b(${PHRASE_12_TO_24})\b`, "gi");
+  const mnemonicAllow = config.mnemonic?.allow ?? [];
 
-const MNEMONIC_QUOTED = new RegExp(
-  // quoted/bracketed phrase alone
-  String.raw`(?:["'(\[])\s*(${PHRASE_12_TO_24})\s*(?:["')\]])`,
-  "gi",
-);
+  const stringTests: Array<{
+    pattern: RegExp;
+    replacer: (v: string, p: RegExp) => string;
+  }> = [
+    {
+      pattern: HEX,
+      replacer: (v, p) =>
+        replaceAllMatchesWithContext(v, p, replacement, hexAllow),
+    },
+    {
+      pattern: BASE64,
+      replacer: (v, p) =>
+        replaceAllMatchesWithContext(v, p, replacement, base64Allow),
+    },
+    {
+      pattern: BASE58,
+      replacer: (v, p) =>
+        replaceAllMatchesWithContext(v, p, replacement, base58Allow),
+    },
+    {
+      pattern: MNEMONIC,
+      replacer: (v, p) =>
+        replaceBip39MnemonicMatchesWithContext(
+          v,
+          p,
+          replacement,
+          mnemonicAllow,
+        ),
+    },
+  ];
 
-// NEW: Bare mnemonic phrases (no keyword, no quotes).
-// This is what your console.log example is: just the phrase by itself.
-// Validation keeps false-positives low.
-const MNEMONIC_BARE = new RegExp(String.raw`\b(${PHRASE_12_TO_24})\b`, "gi");
+  return new DeepRedact({
+    stringTests,
+    replacement,
+    serialise: false,
+  });
+};
 
-const redactor = new DeepRedact({
-  // stringTests runs regex checks against string values (including flat strings)
-  // and lets us partially redact via replacer.
-  stringTests: [
-    { pattern: HEX, replacer: replaceAllMatches },
-    { pattern: BASE64, replacer: replaceAllMatches },
-    { pattern: BASE58, replacer: replaceAllMatches },
-    { pattern: MNEMONIC_WITH_KEYWORD, replacer: replaceBip39MnemonicMatches },
-    { pattern: MNEMONIC_QUOTED, replacer: replaceBip39MnemonicMatches },
-    { pattern: MNEMONIC_BARE, replacer: replaceBip39MnemonicMatches },
-  ],
-  replacement,
-  // serialise mainly matters for objects; keeping it false avoids surprises.
-  serialise: false,
-});
+const createRedact = (config: RedactConfig) => {
+  const redactor = createRedactor(config);
+  return (text: string) => redactor.redact(text) as string;
+};
 
-const redact = (text: string) => redactor.redact(text) as string;
-
-export { redact };
+export { createRedact };
+export type { RedactConfig };
