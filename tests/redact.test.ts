@@ -2,13 +2,11 @@ import { describe, expect, it } from "vitest";
 import { createRedact } from "../src/redact.js";
 
 describe("redact", () => {
-  it("redacts Discord URL", () => {
+  it("redacts base64url", () => {
     const redact = createRedact({});
     const result = redact(
-      "Should redact Discord (https://discord.com/api/webhooks/1473664170267246593/V9xRwhrxrgEIJZL8inMMiEC8wDTwrMQye-VxLyBmkH6vbeTGNNBCjqkbtnUIA_dIVh3d) URL",
+      "Should base64url-ish V9xRwhrxrgEIJZL8inMMiEC8wDTwrMQye-VxLyBmkH6vbeTGNNBCjqkbtnUIA_dIVh3d data",
     );
-    expect(result).toBe(
-      "Should redact Discord (https://discord.com/api/webhooks/[REDACTED]/[REDACTED]) URL",
-    );
+    expect(result).toBe("Should base64url-ish [REDACTED] data");
   });
 });
