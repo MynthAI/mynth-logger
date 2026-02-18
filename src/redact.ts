@@ -134,36 +134,38 @@ const replaceBip39MnemonicMatchesWithContext = (
 const createRedactor = (config: RedactConfig = {}) => {
   const HEX_MIN_LEN = 16;
   const BASE64_MIN_BLOCKS = 4;
-  const BASE64URL_MIN_BLOCKS = 4;
   const BASE58_MIN_LEN = 16;
 
   const HEX = new RegExp(
-    String.raw`\b(?:0x)?[a-fA-F0-9]{${HEX_MIN_LEN},}\b`,
+    String.raw`(?<![a-fA-F0-9])(?:0x)?[a-fA-F0-9]{${HEX_MIN_LEN},}(?![a-fA-F0-9])`,
     "g",
   );
   const hexAllow: ContextRule[] = config.hex?.allow ?? [];
 
   const BASE64 = new RegExp(
-    String.raw`\b(?:[A-Za-z0-9+/]{4}){${BASE64_MIN_BLOCKS},}(?:[A-Za-z0-9+/]{2,3})?(?:={0,2})\b`,
+    String.raw`(?<![A-Za-z0-9+/=])(?:[A-Za-z0-9+/]{4}){${BASE64_MIN_BLOCKS},}(?:[A-Za-z0-9+/]{2,3})?(?:={0,2})(?![A-Za-z0-9+/=])`,
     "g",
   );
   const base64Allow = config.base64?.allow ?? [];
 
   const BASE64URL = new RegExp(
-    String.raw`\b(?:[A-Za-z0-9\-_]{4}){${BASE64URL_MIN_BLOCKS},}(?:[A-Za-z0-9\-_]{2,3})?(?:={0,2})\b`,
+    String.raw`(?<![A-Za-z0-9\-_])[A-Za-z0-9\-_]{16,}(?:={0,2})?(?![A-Za-z0-9\-_])`,
     "g",
   );
   const base64urlAllow = config.base64url?.allow ?? [];
 
   const BASE58 = new RegExp(
-    String.raw`\b[1-9A-HJ-NP-Za-km-z]{${BASE58_MIN_LEN},}\b`,
+    String.raw`(?<![1-9A-HJ-NP-Za-km-z])[1-9A-HJ-NP-Za-km-z]{${BASE58_MIN_LEN},}(?![1-9A-HJ-NP-Za-km-z])`,
     "g",
   );
   const base58Allow = config.base58?.allow ?? [];
 
   const WORD = "[a-zA-Z]{2,8}";
   const PHRASE_12_TO_24 = `(?:${WORD}\\s+){11,23}${WORD}`;
-  const MNEMONIC = new RegExp(String.raw`\b(${PHRASE_12_TO_24})\b`, "gi");
+  const MNEMONIC = new RegExp(
+    String.raw`(?<![A-Za-z])(${PHRASE_12_TO_24})(?![A-Za-z])`,
+    "gi",
+  );
   const mnemonicAllow = config.mnemonic?.allow ?? [];
 
   const stringTests: Array<{
