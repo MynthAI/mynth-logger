@@ -27,7 +27,6 @@ type ContextRule = {
 };
 
 type DetectorConfig = {
-  enabled?: boolean;
   /**
    * Any rule match => do not redact that specific match.
    */
@@ -145,7 +144,6 @@ const createRedactor = (config: RedactConfig = {}) => {
   const BASE58_MIN_LEN = 32;
 
   // 1) HEX
-  const hexEnabled = config.hex?.enabled ?? true;
   const HEX = new RegExp(
     String.raw`\b(?:0x)?[a-fA-F0-9]{${HEX_MIN_LEN},}\b`,
     "g",
@@ -153,7 +151,6 @@ const createRedactor = (config: RedactConfig = {}) => {
   const hexAllow: ContextRule[] = config.hex?.allow ?? [];
 
   // 2) BASE64
-  const base64Enabled = config.base64?.enabled ?? true;
   const BASE64 = new RegExp(
     String.raw`\b(?:[A-Za-z0-9+/]{4}){${BASE64_MIN_BLOCKS},}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\b`,
     "g",
@@ -161,15 +158,11 @@ const createRedactor = (config: RedactConfig = {}) => {
   const base64Allow = config.base64?.allow ?? [];
 
   // 3) BASE58
-  const base58Enabled = config.base58?.enabled ?? true;
   const BASE58 = new RegExp(
     String.raw`\b[1-9A-HJ-NP-Za-km-z]{${BASE58_MIN_LEN},}\b`,
     "g",
   );
   const base58Allow = config.base58?.allow ?? [];
-
-  // 4) MNEMONIC seed phrases (bare variant only)
-  const mnemonicEnabled = config.mnemonic?.enabled ?? true;
 
   const WORD = "[a-zA-Z]{2,8}";
   const PHRASE_12_TO_24 = `(?:${WORD}\\s+){11,23}${WORD}`;
@@ -181,31 +174,23 @@ const createRedactor = (config: RedactConfig = {}) => {
   const stringTests: Array<{
     pattern: RegExp;
     replacer: (v: string, p: RegExp) => string;
-  }> = [];
-
-  if (hexEnabled)
-    stringTests.push({
+  }> = [
+    {
       pattern: HEX,
       replacer: (v, p) =>
         replaceAllMatchesWithContext(v, p, replacement, hexAllow),
-    });
-
-  if (base64Enabled)
-    stringTests.push({
+    },
+    {
       pattern: BASE64,
       replacer: (v, p) =>
         replaceAllMatchesWithContext(v, p, replacement, base64Allow),
-    });
-
-  if (base58Enabled)
-    stringTests.push({
+    },
+    {
       pattern: BASE58,
       replacer: (v, p) =>
         replaceAllMatchesWithContext(v, p, replacement, base58Allow),
-    });
-
-  if (mnemonicEnabled)
-    stringTests.push({
+    },
+    {
       pattern: MNEMONIC_BARE,
       replacer: (v, p) =>
         replaceBip39MnemonicMatchesWithContext(
@@ -214,7 +199,8 @@ const createRedactor = (config: RedactConfig = {}) => {
           replacement,
           mnemonicAllow,
         ),
-    });
+    },
+  ];
 
   return new DeepRedact({
     stringTests,
