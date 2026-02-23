@@ -31,4 +31,14 @@ describe("redact", () => {
       );
     }
   });
+
+  it("redacts multiple hex in same string", () => {
+    const redact = createRedact({});
+    const result = redact(
+      "Pushed event fcc6533b59301096a973b8be3e6518f0cd13f73a9821de558cca77ac9b014d6e.1561338e25f9b57a9babc7ad57a0e0ee0b13a7094a895319883c7daf4a869642 with key d13821711360de832b80be20507912cebe123ebe52240ae91e6a699b72beb26a",
+    );
+    expect(result).toBe(
+      "Pushed event [REDACTED].[REDACTED] with key [REDACTED]",
+    );
+  });
 });
