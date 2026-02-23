@@ -19,4 +19,16 @@ describe("redact", () => {
       "Should redact private key ([REDACTED]) and API key ([REDACTED])",
     );
   });
+
+  it("allows whitelist each time", () => {
+    const redact = createRedact({ hex: { allow: [{ re: /\b(event)\b/i }] } });
+    for (let i = 0; i < 10; i++) {
+      const result = redact(
+        "Pushed event fcc6533b59301096a973b8be3e6518f0cd13f73a9821de558cca77ac9b014d6e.1771865100000",
+      );
+      expect(result).toBe(
+        "Pushed event fcc6533b59301096a973b8be3e6518f0cd13f73a9821de558cca77ac9b014d6e.1771865100000",
+      );
+    }
+  });
 });
