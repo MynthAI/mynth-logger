@@ -8,11 +8,11 @@ const setupLogging = (config: RedactConfig = {}) => {
   updateConfig(config);
   const consola = createConsola({ fancy: true, level: 5 });
 
-  if (process.env.NODE_ENV === "production")
-    consola.setReporters([DatadogReporter]);
   // Set Discord reporter as first so it can remove
   // Discord-related config before other reporters process the
   // log
+  if (process.env.NODE_ENV === "production")
+    consola.setReporters([DiscordReporter, DatadogReporter]);
   else consola.setReporters([DiscordReporter, ...consola.options.reporters]);
 
   consola.wrapConsole();
