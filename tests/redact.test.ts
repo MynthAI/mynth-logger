@@ -41,4 +41,16 @@ describe("redact", () => {
       "Pushed event [REDACTED].[REDACTED] with key [REDACTED]",
     );
   });
+
+  it("redacts only once with allowlist", () => {
+    const redact = createRedact({
+      hex: { allow: [{ re: /\b(intent)\b/i }] },
+    });
+    const result = redact(
+      `This is an intent b3c1c51b70cd602cc9a5f76d3795b6eca27a89f884ba8977b604451333393530 but this is a private key: 9f4613930bc9d4ad3b2d838d79af0763538b2cee70083b281e2868f4632920b0`,
+    );
+    expect(result).toBe(
+      `This is an intent b3c1c51b70cd602cc9a5f76d3795b6eca27a89f884ba8977b604451333393530 but this is a private key: [REDACTED]`,
+    );
+  });
 });
