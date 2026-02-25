@@ -90,13 +90,23 @@ const getReplaceMeta = (args: unknown[]): ReplaceMeta | null => {
   return { offset, whole };
 };
 
+// Ensure the regex is global so String.replace() visits *all* matches.
+// (DeepRedact may provide non-global patterns; we still want to replace all.)
+const asGlobal = (re: RegExp) => {
+  if (re.global) return re;
+  return new RegExp(
+    re.source,
+    re.flags.includes("g") ? re.flags : re.flags + "g",
+  );
+};
+
 const replaceAllMatchesWithContext = (
   value: string,
   pattern: RegExp,
   replacement: string,
   allow?: ContextRule[],
 ) =>
-  value.replace(pattern, (...args: unknown[]) => {
+  value.replace(asGlobal(pattern), (...args: unknown[]) => {
     const match = args[0];
     if (typeof match !== "string") return replacement;
 
@@ -118,7 +128,7 @@ const replaceBip39MnemonicMatchesWithContext = (
   replacement: string,
   allow?: ContextRule[],
 ) =>
-  value.replace(pattern, (...args: unknown[]) => {
+  value.replace(asGlobal(pattern), (...args: unknown[]) => {
     const match = args[0];
     const phrase = args[1];
 
