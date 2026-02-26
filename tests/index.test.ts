@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import { format } from "../src/format.js";
 import { setupLogging } from "../src/index.js";
 
 beforeAll(() => {
@@ -24,5 +25,13 @@ describe("logging", () => {
       "a723cc20646a45cccd045b4bd13c0f73e505e6fc7f0c5006ab62e0410a2ef9ba",
     );
     expect(true).toBe(true);
+  });
+
+  it("redacts secret inside Error message and stack", () => {
+    const secret =
+      "78a2fca7a36abb167ecff613ce75cde8b4c04ef4579651f182a8cef9c86b00b5";
+    const result = format([new Error(`this will be redacted ${secret}`)]);
+    expect(result).not.toContain(secret);
+    expect(result).toContain("[REDACTED]");
   });
 });

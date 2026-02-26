@@ -25,7 +25,8 @@ const formatItem = (item: unknown): string => {
 
   // Check if this is an Error
   const error = ErrorType(item);
-  if (!(error instanceof type.errors)) return error.stack || error.message;
+  if (!(error instanceof type.errors))
+    return config.redact(error.stack || error.message);
 
   const stringified = (() => {
     try {
