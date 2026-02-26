@@ -15,18 +15,17 @@ const ErrorType = type({
   "stack?": "string",
 });
 
-const formatItem = (item: unknown): string => {
+const itemToString = (item: unknown): string => {
   if (typeof item === "undefined") return "undefined";
 
   // Remove colors from strings
   if (typeof item === "string")
     // biome-ignore lint/suspicious/noControlCharactersInRegex: stripping ANSI escape codes
-    return config.redact(item.replace(/\x1b\[[0-9;]*m/g, ""));
+    return item.replace(/\x1b\[[0-9;]*m/g, "");
 
   // Check if this is an Error
   const error = ErrorType(item);
-  if (!(error instanceof type.errors))
-    return config.redact(error.stack || error.message);
+  if (!(error instanceof type.errors)) return error.stack || error.message;
 
   const stringified = (() => {
     try {
@@ -36,12 +35,10 @@ const formatItem = (item: unknown): string => {
     }
   })();
 
-  return config.redact(stringified.replace(/^'|'$/g, ""));
+  return stringified.replace(/^'|'$/g, "");
 };
 
 const format = (items: unknown[]): string =>
-  Array.from(items)
-    .map((item) => formatItem(item))
-    .join(" ");
+  config.redact(Array.from(items).map(itemToString).join(" "));
 
 export { format, updateConfig };
