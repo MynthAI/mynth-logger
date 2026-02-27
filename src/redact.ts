@@ -1,6 +1,7 @@
 import { DeepRedact } from "@hackylabs/deep-redact/index.ts";
 import { validateMnemonic } from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english.js";
+import { type } from "arktype";
 
 /**
  * Configurable redaction for strings that *look like secrets*:
@@ -239,27 +240,29 @@ const createRedact = (config: RedactConfig) => {
   };
 };
 
-type SerializableContextRule = {
-  re: string;
-  flags?: string;
-  before?: number;
-  after?: number;
-};
+const SerializableContextRuleType = type({
+  re: "string",
+  "flags?": "string",
+  "before?": "number",
+  "after?": "number",
+});
 
-type SerializableDetectorConfig = {
-  allow?: SerializableContextRule[];
-};
+const SerializableDetectorConfigType = type({
+  "allow?": SerializableContextRuleType.array(),
+});
 
-type SerializableRedactConfig = {
-  hex?: SerializableDetectorConfig;
-  base64?: SerializableDetectorConfig;
-  base64url?: SerializableDetectorConfig;
-  base58?: SerializableDetectorConfig;
-  mnemonic?: SerializableDetectorConfig;
-};
+const SerializableRedactConfigType = type({
+  "hex?": SerializableDetectorConfigType,
+  "base64?": SerializableDetectorConfigType,
+  "base64url?": SerializableDetectorConfigType,
+  "base58?": SerializableDetectorConfigType,
+  "mnemonic?": SerializableDetectorConfigType,
+});
+
+type SerializableRedactConfig = typeof SerializableRedactConfigType.infer;
 
 const deserializeContextRule = (
-  rule: SerializableContextRule,
+  rule: typeof SerializableContextRuleType.infer,
 ): ContextRule => ({
   re: new RegExp(rule.re, rule.flags ?? ""),
   before: rule.before,
@@ -267,7 +270,7 @@ const deserializeContextRule = (
 });
 
 const deserializeDetectorConfig = (
-  cfg: SerializableDetectorConfig,
+  cfg: typeof SerializableDetectorConfigType.infer,
 ): DetectorConfig => ({
   allow: cfg.allow?.map(deserializeContextRule),
 });
@@ -310,13 +313,12 @@ const parseEnvRedactConfig = (): RedactConfig => {
   const raw = process.env.REDACT_CONFIG;
   if (!raw) return {};
 
-  try {
-    const json = Buffer.from(raw, "base64").toString("utf8");
-    const parsed: SerializableRedactConfig = JSON.parse(json);
-    return deserializeRedactConfig(parsed);
-  } catch {
-    return {};
-  }
+  const json = Buffer.from(raw, "base64").toString("utf8");
+  const parsed: unknown = JSON.parse(json);
+  const validated = SerializableRedactConfigType(parsed);
+  if (validated instanceof type.errors)
+    throw new Error(`REDACT_CONFIG validation failed: ${validated.summary}`);
+  return deserializeRedactConfig(validated);
 };
 
 export { createRedact, mergeRedactConfigs, parseEnvRedactConfig };

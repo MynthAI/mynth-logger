@@ -131,16 +131,21 @@ describe("parseEnvRedactConfig", () => {
     expect(config.hex?.allow?.[0].re.flags).toContain("i");
   });
 
-  it("returns empty config on invalid base64", () => {
+  it("throws on invalid base64", () => {
     process.env.REDACT_CONFIG = "!!!not-valid-base64!!!";
-    const config = parseEnvRedactConfig();
-    expect(config).toEqual({});
+    expect(() => parseEnvRedactConfig()).toThrow();
   });
 
-  it("returns empty config on invalid JSON", () => {
+  it("throws on invalid JSON", () => {
     process.env.REDACT_CONFIG = Buffer.from("{not json}").toString("base64");
-    const config = parseEnvRedactConfig();
-    expect(config).toEqual({});
+    expect(() => parseEnvRedactConfig()).toThrow();
+  });
+
+  it("throws when JSON structure fails arktype validation", () => {
+    process.env.REDACT_CONFIG = Buffer.from(
+      JSON.stringify({ hex: { allow: [{ re: 123 }] } }),
+    ).toString("base64");
+    expect(() => parseEnvRedactConfig()).toThrow();
   });
 
   it("applies env config allow rules when redacting", () => {
