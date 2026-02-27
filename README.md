@@ -52,10 +52,10 @@ formatting the logs appropriately based on the environment:
 console.log('This is a log message');
 ```
 
-In **development** (when NODE\_ENV isn’t set to `production`), you’ll
-see colorful logs in the terminal.
+In **development** (when NODE_ENV isn’t set to `production`), you’ll see
+colorful logs in the terminal.
 
-In **production** (when NODE\_ENV is set to `production`), logs will be
+In **production** (when NODE_ENV is set to `production`), logs will be
 output in JSON format to stdout.
 
 ## Configuration
@@ -71,7 +71,7 @@ replaced with `[REDACTED]`:
 - **Hex strings** — 16+ hex characters (optionally `0x`-prefixed)
 - **Base64 blobs** — standard Base64-encoded payloads
 - **Base64url blobs** — URL-safe Base64-encoded payloads
-- **Base58 blobs** — Base58-encoded strings (e.g. Solana addresses)
+- **Base58 blobs** — Base58-encoded strings (e.g. Solana addresses)
 - **BIP39 mnemonics** — 12–24 word seed phrases validated against the
   BIP39 word list
 
@@ -95,8 +95,8 @@ Any hex string that appears directly after the word `event` or
 ### Creating an allowlist
 
 An allowlist is a set of **context rules** attached to a detector. A
-context rule tells the logger: *"if the text surrounding this match
-looks like X, leave it alone."*
+context rule tells the logger: *“if the text surrounding this match
+looks like X, leave it alone.”*
 
 Each rule has the following shape:
 
@@ -132,8 +132,8 @@ console.log("intent b3c1c51b70cd602cc9a5f76d3795b6eca27a89f884ba8977b60445133339
 console.log("private key: 9f4613930bc9d4ad3b2d838d79af0763538b2cee70083b281e2868f4632920b0");
 ```
 
-You can define allow rules for any of the five detectors
-(`hex`, `base64`, `base64url`, `base58`, `mnemonic`):
+You can define allow rules for any of the five detectors (`hex`,
+`base64`, `base64url`, `base58`, `mnemonic`):
 
 ``` typescript
 setupLogging({
@@ -147,7 +147,7 @@ setupLogging({
 
 You can also supply a redaction config via the `REDACT_CONFIG`
 environment variable. This is useful when you need to configure
-redaction without changing application code (e.g. via a deployment
+redaction without changing application code (e.g. via a deployment
 secret).
 
 The value must be a **Base64-encoded JSON** string. Regex patterns are
@@ -179,7 +179,8 @@ export REDACT_CONFIG="eyJoZXgiOnsiYWxsb3ciOlt7InJlIjoiXFxiKGV2ZW50KVxcYiIsImZsYW
 ```
 
 When both `setupLogging` config and `REDACT_CONFIG` are provided, their
-allow rules are **merged**: a match is kept if *either* source allows it.
+allow rules are **merged**: a match is kept if *either* source allows
+it.
 
 ## Discord
 
