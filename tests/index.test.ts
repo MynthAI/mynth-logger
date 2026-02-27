@@ -3,7 +3,7 @@ import { format } from "../src/format.js";
 import { setupLogging } from "../src/index.js";
 
 beforeAll(() => {
-  setupLogging();
+  setupLogging({ hex: { allow: [{ re: /\b(transfer)\b/i }] } });
 });
 
 describe("logging", () => {
@@ -33,5 +33,15 @@ describe("logging", () => {
     const result = format([new Error(`this will be redacted ${secret}`)]);
     expect(result).not.toContain(secret);
     expect(result).toContain("[REDACTED]");
+  });
+
+  it("allows hex when context word is in a separate argument", () => {
+    const result = format([
+      "transfer",
+      "538845bf2f418e0c7f3798d6bcb632273d46633545a5e261feceb7d378ed0761",
+    ]);
+    expect(result).toBe(
+      "transfer 538845bf2f418e0c7f3798d6bcb632273d46633545a5e261feceb7d378ed0761",
+    );
   });
 });
