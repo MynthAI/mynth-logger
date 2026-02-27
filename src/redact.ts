@@ -245,7 +245,11 @@ const SerializableContextRuleType = type({
   "flags?": "string",
   "before?": "number",
   "after?": "number",
-});
+}).pipe((rule): ContextRule => ({
+  re: new RegExp(rule.re, rule.flags ?? ""),
+  before: rule.before,
+  after: rule.after,
+}));
 
 const SerializableDetectorConfigType = type({
   "allow?": SerializableContextRuleType.array(),
@@ -257,34 +261,6 @@ const SerializableRedactConfigType = type({
   "base64url?": SerializableDetectorConfigType,
   "base58?": SerializableDetectorConfigType,
   "mnemonic?": SerializableDetectorConfigType,
-});
-
-type SerializableRedactConfig = typeof SerializableRedactConfigType.infer;
-
-const deserializeContextRule = (
-  rule: typeof SerializableContextRuleType.infer,
-): ContextRule => ({
-  re: new RegExp(rule.re, rule.flags ?? ""),
-  before: rule.before,
-  after: rule.after,
-});
-
-const deserializeDetectorConfig = (
-  cfg: typeof SerializableDetectorConfigType.infer,
-): DetectorConfig => ({
-  allow: cfg.allow?.map(deserializeContextRule),
-});
-
-const deserializeRedactConfig = (
-  cfg: SerializableRedactConfig,
-): RedactConfig => ({
-  hex: cfg.hex ? deserializeDetectorConfig(cfg.hex) : undefined,
-  base64: cfg.base64 ? deserializeDetectorConfig(cfg.base64) : undefined,
-  base64url: cfg.base64url
-    ? deserializeDetectorConfig(cfg.base64url)
-    : undefined,
-  base58: cfg.base58 ? deserializeDetectorConfig(cfg.base58) : undefined,
-  mnemonic: cfg.mnemonic ? deserializeDetectorConfig(cfg.mnemonic) : undefined,
 });
 
 const mergeDetectorConfigs = (
@@ -318,8 +294,8 @@ const parseEnvRedactConfig = (): RedactConfig => {
   const validated = SerializableRedactConfigType(parsed);
   if (validated instanceof type.errors)
     throw new Error(`REDACT_CONFIG validation failed: ${validated.summary}`);
-  return deserializeRedactConfig(validated);
+  return validated;
 };
 
 export { createRedact, mergeRedactConfigs, parseEnvRedactConfig };
-export type { RedactConfig, SerializableRedactConfig };
+export type { RedactConfig };
