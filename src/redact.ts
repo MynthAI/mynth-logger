@@ -1,6 +1,7 @@
 import { DeepRedact } from "@hackylabs/deep-redact/index.ts";
 import { validateMnemonic } from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english.js";
+import { type } from "arktype";
 
 /**
  * Configurable redaction for strings that *look like secrets*:
@@ -239,5 +240,64 @@ const createRedact = (config: RedactConfig) => {
   };
 };
 
-export { createRedact };
+const SerializableContextRuleType = type({
+  re: "string",
+  "flags?": "string",
+  "before?": "number",
+  "after?": "number",
+}).pipe(
+  (rule): ContextRule => ({
+    re: new RegExp(rule.re, rule.flags ?? ""),
+    before: rule.before,
+    after: rule.after,
+  }),
+);
+
+const SerializableDetectorConfigType = type({
+  "allow?": SerializableContextRuleType.array(),
+});
+
+const SerializableRedactConfigType = type({
+  "hex?": SerializableDetectorConfigType,
+  "base64?": SerializableDetectorConfigType,
+  "base64url?": SerializableDetectorConfigType,
+  "base58?": SerializableDetectorConfigType,
+  "mnemonic?": SerializableDetectorConfigType,
+});
+
+const mergeDetectorConfigs = (
+  a?: DetectorConfig,
+  b?: DetectorConfig,
+): DetectorConfig | undefined => {
+  if (!a && !b) return undefined;
+  const allowA = a?.allow ?? [];
+  const allowB = b?.allow ?? [];
+  const merged = [...allowA, ...allowB];
+  return { allow: merged.length > 0 ? merged : undefined };
+};
+
+const mergeRedactConfigs = (
+  a: RedactConfig,
+  b: RedactConfig,
+): RedactConfig => ({
+  hex: mergeDetectorConfigs(a.hex, b.hex),
+  base64: mergeDetectorConfigs(a.base64, b.base64),
+  base64url: mergeDetectorConfigs(a.base64url, b.base64url),
+  base58: mergeDetectorConfigs(a.base58, b.base58),
+  mnemonic: mergeDetectorConfigs(a.mnemonic, b.mnemonic),
+});
+
+const parseEnvRedactConfig = (): RedactConfig => {
+  const raw = process.env.REDACT_CONFIG;
+  if (!raw) return {};
+
+  const json = Buffer.from(raw, "base64").toString("utf8");
+  const parsed: unknown = JSON.parse(json);
+  const validated = SerializableRedactConfigType(parsed);
+  if (validated instanceof type.errors)
+    throw new Error(`REDACT_CONFIG validation failed: ${validated.summary}`);
+  return validated;
+};
+
+export { createRedact, mergeRedactConfigs, parseEnvRedactConfig };
 export type { RedactConfig };

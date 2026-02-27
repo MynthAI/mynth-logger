@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { createRedact } from "../src/redact.js";
+import { afterEach, describe, expect, it } from "vitest";
+import {
+  createRedact,
+  mergeRedactConfigs,
+  parseEnvRedactConfig,
+} from "../src/redact.js";
 
 describe("redact", () => {
   it("redacts base64url", () => {
@@ -51,6 +55,114 @@ describe("redact", () => {
     );
     expect(result).toBe(
       `This is an intent b3c1c51b70cd602cc9a5f76d3795b6eca27a89f884ba8977b604451333393530 but this is a private key: [REDACTED]`,
+    );
+  });
+});
+
+describe("mergeRedactConfigs", () => {
+  it("merges allow rules from both configs", () => {
+    const a = { hex: { allow: [{ re: /\b(event)\b/i }] } };
+    const b = { hex: { allow: [{ re: /\b(transfer)\b/i }] } };
+    const merged = mergeRedactConfigs(a, b);
+    const redact = createRedact(merged);
+
+    const eventResult = redact(
+      "Pushed event fcc6533b59301096a973b8be3e6518f0cd13f73a9821de558cca77ac9b014d6e.1771865100000",
+    );
+    expect(eventResult).toContain(
+      "fcc6533b59301096a973b8be3e6518f0cd13f73a9821de558cca77ac9b014d6e",
+    );
+
+    const transferResult = redact(
+      "transfer 538845bf2f418e0c7f3798d6bcb632273d46633545a5e261feceb7d378ed0761",
+    );
+    expect(transferResult).toContain(
+      "538845bf2f418e0c7f3798d6bcb632273d46633545a5e261feceb7d378ed0761",
+    );
+  });
+
+  it("handles empty configs", () => {
+    const merged = mergeRedactConfigs({}, {});
+    expect(merged).toEqual({
+      hex: undefined,
+      base64: undefined,
+      base64url: undefined,
+      base58: undefined,
+      mnemonic: undefined,
+    });
+  });
+
+  it("uses only a config when b is empty", () => {
+    const a = { hex: { allow: [{ re: /\b(event)\b/i }] } };
+    const merged = mergeRedactConfigs(a, {});
+    const redact = createRedact(merged);
+    const result = redact(
+      "Pushed event fcc6533b59301096a973b8be3e6518f0cd13f73a9821de558cca77ac9b014d6e.1771865100000",
+    );
+    expect(result).toContain(
+      "fcc6533b59301096a973b8be3e6518f0cd13f73a9821de558cca77ac9b014d6e",
+    );
+  });
+});
+
+describe("parseEnvRedactConfig", () => {
+  afterEach(() => {
+    delete process.env.REDACT_CONFIG;
+  });
+
+  it("returns empty config when REDACT_CONFIG is not set", () => {
+    delete process.env.REDACT_CONFIG;
+    const config = parseEnvRedactConfig();
+    expect(config).toEqual({});
+  });
+
+  it("parses base64-encoded JSON config", () => {
+    const serializable = {
+      hex: { allow: [{ re: "\\b(event)\\b", flags: "i" }] },
+    };
+    process.env.REDACT_CONFIG = Buffer.from(
+      JSON.stringify(serializable),
+    ).toString("base64");
+    const config = parseEnvRedactConfig();
+
+    expect(config.hex?.allow).toHaveLength(1);
+    expect(config.hex?.allow?.[0].re).toBeInstanceOf(RegExp);
+    expect(config.hex?.allow?.[0].re.source).toBe("\\b(event)\\b");
+    expect(config.hex?.allow?.[0].re.flags).toContain("i");
+  });
+
+  it("throws on invalid base64", () => {
+    process.env.REDACT_CONFIG = "!!!not-valid-base64!!!";
+    expect(() => parseEnvRedactConfig()).toThrow();
+  });
+
+  it("throws on invalid JSON", () => {
+    process.env.REDACT_CONFIG = Buffer.from("{not json}").toString("base64");
+    expect(() => parseEnvRedactConfig()).toThrow();
+  });
+
+  it("throws when JSON structure fails arktype validation", () => {
+    process.env.REDACT_CONFIG = Buffer.from(
+      JSON.stringify({ hex: { allow: [{ re: 123 }] } }),
+    ).toString("base64");
+    expect(() => parseEnvRedactConfig()).toThrow();
+  });
+
+  it("applies env config allow rules when redacting", () => {
+    const serializable = {
+      hex: { allow: [{ re: "\\b(transfer)\\b", flags: "i" }] },
+    };
+    process.env.REDACT_CONFIG = Buffer.from(
+      JSON.stringify(serializable),
+    ).toString("base64");
+    const envConfig = parseEnvRedactConfig();
+
+    const redact = createRedact(envConfig);
+    const result = redact(
+      "transfer 538845bf2f418e0c7f3798d6bcb632273d46633545a5e261feceb7d378ed0761",
+    );
+    expect(result).toBe(
+      "transfer 538845bf2f418e0c7f3798d6bcb632273d46633545a5e261feceb7d378ed0761",
     );
   });
 });
