@@ -239,5 +239,85 @@ const createRedact = (config: RedactConfig) => {
   };
 };
 
-export { createRedact };
-export type { RedactConfig };
+type SerializableContextRule = {
+  re: string;
+  flags?: string;
+  before?: number;
+  after?: number;
+};
+
+type SerializableDetectorConfig = {
+  allow?: SerializableContextRule[];
+};
+
+type SerializableRedactConfig = {
+  hex?: SerializableDetectorConfig;
+  base64?: SerializableDetectorConfig;
+  base64url?: SerializableDetectorConfig;
+  base58?: SerializableDetectorConfig;
+  mnemonic?: SerializableDetectorConfig;
+};
+
+const deserializeContextRule = (
+  rule: SerializableContextRule,
+): ContextRule => ({
+  re: new RegExp(rule.re, rule.flags ?? ""),
+  before: rule.before,
+  after: rule.after,
+});
+
+const deserializeDetectorConfig = (
+  cfg: SerializableDetectorConfig,
+): DetectorConfig => ({
+  allow: cfg.allow?.map(deserializeContextRule),
+});
+
+const deserializeRedactConfig = (
+  cfg: SerializableRedactConfig,
+): RedactConfig => ({
+  hex: cfg.hex ? deserializeDetectorConfig(cfg.hex) : undefined,
+  base64: cfg.base64 ? deserializeDetectorConfig(cfg.base64) : undefined,
+  base64url: cfg.base64url
+    ? deserializeDetectorConfig(cfg.base64url)
+    : undefined,
+  base58: cfg.base58 ? deserializeDetectorConfig(cfg.base58) : undefined,
+  mnemonic: cfg.mnemonic ? deserializeDetectorConfig(cfg.mnemonic) : undefined,
+});
+
+const mergeDetectorConfigs = (
+  a?: DetectorConfig,
+  b?: DetectorConfig,
+): DetectorConfig | undefined => {
+  if (!a && !b) return undefined;
+  const allowA = a?.allow ?? [];
+  const allowB = b?.allow ?? [];
+  const merged = [...allowA, ...allowB];
+  return { allow: merged.length > 0 ? merged : undefined };
+};
+
+const mergeRedactConfigs = (
+  a: RedactConfig,
+  b: RedactConfig,
+): RedactConfig => ({
+  hex: mergeDetectorConfigs(a.hex, b.hex),
+  base64: mergeDetectorConfigs(a.base64, b.base64),
+  base64url: mergeDetectorConfigs(a.base64url, b.base64url),
+  base58: mergeDetectorConfigs(a.base58, b.base58),
+  mnemonic: mergeDetectorConfigs(a.mnemonic, b.mnemonic),
+});
+
+const parseEnvRedactConfig = (): RedactConfig => {
+  const raw = process.env.REDACT_CONFIG;
+  if (!raw) return {};
+
+  try {
+    const json = Buffer.from(raw, "base64").toString("utf8");
+    const parsed: SerializableRedactConfig = JSON.parse(json);
+    return deserializeRedactConfig(parsed);
+  } catch {
+    return {};
+  }
+};
+
+export { createRedact, mergeRedactConfigs, parseEnvRedactConfig };
+export type { RedactConfig, SerializableRedactConfig };
