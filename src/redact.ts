@@ -245,11 +245,13 @@ const SerializableContextRuleType = type({
   "flags?": "string",
   "before?": "number",
   "after?": "number",
-}).pipe((rule): ContextRule => ({
-  re: new RegExp(rule.re, rule.flags ?? ""),
-  before: rule.before,
-  after: rule.after,
-}));
+}).pipe(
+  (rule): ContextRule => ({
+    re: new RegExp(rule.re, rule.flags ?? ""),
+    before: rule.before,
+    after: rule.after,
+  }),
+);
 
 const SerializableDetectorConfigType = type({
   "allow?": SerializableContextRuleType.array(),
