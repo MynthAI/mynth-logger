@@ -1,9 +1,9 @@
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { format } from "../src/format.js";
 import { setupLogging } from "../src/index.js";
 
 beforeAll(() => {
-  setupLogging();
+  setupLogging({ hex: { allow: [{ re: /\b(transfer)\b/i }] } });
 });
 
 describe("logging", () => {
@@ -36,7 +36,6 @@ describe("logging", () => {
   });
 
   it("allows hex when context word is in a separate argument", () => {
-    setupLogging({ hex: { allow: [{ re: /\b(transfer)\b/i }] } });
     const result = format([
       "transfer",
       "538845bf2f418e0c7f3798d6bcb632273d46633545a5e261feceb7d378ed0761",
@@ -44,9 +43,5 @@ describe("logging", () => {
     expect(result).toBe(
       "transfer 538845bf2f418e0c7f3798d6bcb632273d46633545a5e261feceb7d378ed0761",
     );
-  });
-
-  afterEach(() => {
-    setupLogging();
   });
 });
